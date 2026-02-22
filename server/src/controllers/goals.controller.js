@@ -1,4 +1,9 @@
 import { streamChatWithOllama, chatWithOllama } from '../lib/ollama.js';
+import prisma from '../lib/prisma.js';
+
+// ============================================================
+// AI ENDPOINTS
+// ============================================================
 
 /**
  * Goal discussion endpoint - AI discusses a goal with the user and suggests subgoals
@@ -110,62 +115,282 @@ Consider the user's feedback and preferences from the conversation when finalizi
   }
 }
 
+/**
+ * AI suggest milestones for a goal
+ * Uses SSE streaming for real-time responses
+ */
+export async function suggestMilestones(req, res) {
+  try {
+    const { id } = req.params;
+    const { enableThinking = true } = req.body;
+
+    // Fetch the goal from database
+    const goal = await prisma.goal.findUnique({
+      where: { id },
+      include: { milestones: true }
+    });
+
+    if (!goal) {
+      return res.status(404).json({ error: 'Goal not found' });
+    }
+
+    const existingMilestones = goal.milestones.map(m => m.title).join(', ') || 'None yet';
+
+    const systemPrompt = `You are an AI assistant helping to break down a goal into milestones.
+A milestone is a major checkpoint or phase in achieving the goal.
+Each milestone should represent a significant, measurable achievement.
+
+The user's goal: "${goal.title}"
+${goal.description ? `Description: ${goal.description}` : ''}
+${goal.targetDate ? `Target date: ${goal.targetDate.toISOString().split('T')[0]}` : ''}
+Existing milestones: ${existingMilestones}
+
+Suggest 3-5 milestones that would help achieve this goal.
+For each milestone, provide:
+- A clear title
+- A brief description
+- An estimated target date (if the goal has a target date)
+- Order/sequence in which they should be completed
+
+Format your response clearly with each milestone numbered.`;
+
+    const messages = [
+      { role: 'user', content: 'Please suggest milestones for my goal.' }
+    ];
+
+    await streamChatWithOllama(res, messages, systemPrompt, enableThinking);
+  } catch (error) {
+    console.error('Error suggesting milestones:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to suggest milestones', details: error.message });
+    }
+  }
+}
+
 // ============================================================
-// CRUD endpoints (to be implemented in Phase 1 with Prisma)
+// CRUD ENDPOINTS
 // ============================================================
 
 /**
- * Get all goals
+ * Get all goals with milestone count and progress
  */
 export async function getAllGoals(req, res) {
-  // TODO: Implement with Prisma in Phase 1
-  res.status(501).json({ error: 'Not implemented yet' });
+  try {
+    const goals = await prisma.goal.findMany({
+      include: {
+        milestones: {
+          include: {
+            _count: {
+              select: { tasks: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Calculate progress for each goal
+    const goalsWithProgress = goals.map(goal => {
+      const totalMilestones = goal.milestones.length;
+      const completedMilestones = goal.milestones.filter(m => m.status === 'COMPLETED').length;
+      const progress = totalMilestones > 0 
+        ? Math.round((completedMilestones / totalMilestones) * 100) 
+        : 0;
+
+      return {
+        ...goal,
+        progress,
+        milestoneCount: totalMilestones,
+        completedMilestoneCount: completedMilestones
+      };
+    });
+
+    res.json(goalsWithProgress);
+  } catch (error) {
+    console.error('Error fetching goals:', error);
+    res.status(500).json({ error: 'Failed to fetch goals', details: error.message });
+  }
 }
 
 /**
  * Create a new goal
  */
 export async function createGoal(req, res) {
-  // TODO: Implement with Prisma in Phase 1
-  res.status(501).json({ error: 'Not implemented yet' });
+  try {
+    const { title, description, targetDate } = req.body;
+
+    if (!title || title.trim() === '') {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+
+    const goal = await prisma.goal.create({
+      data: {
+        title: title.trim(),
+        description: description?.trim() || null,
+        targetDate: targetDate ? new Date(targetDate) : null
+      }
+    });
+
+    res.status(201).json(goal);
+  } catch (error) {
+    console.error('Error creating goal:', error);
+    res.status(500).json({ error: 'Failed to create goal', details: error.message });
+  }
 }
 
 /**
  * Get a single goal by ID with milestones and tasks
  */
 export async function getGoal(req, res) {
-  // TODO: Implement with Prisma in Phase 1
-  res.status(501).json({ error: 'Not implemented yet' });
+  try {
+    const { id } = req.params;
+
+    const goal = await prisma.goal.findUnique({
+      where: { id },
+      include: {
+        milestones: {
+          orderBy: { orderIndex: 'asc' },
+          include: {
+            tasks: {
+              orderBy: { orderIndex: 'asc' }
+            }
+          }
+        }
+      }
+    });
+
+    if (!goal) {
+      return res.status(404).json({ error: 'Goal not found' });
+    }
+
+    // Calculate progress
+    const totalMilestones = goal.milestones.length;
+    const completedMilestones = goal.milestones.filter(m => m.status === 'COMPLETED').length;
+    const progress = totalMilestones > 0 
+      ? Math.round((completedMilestones / totalMilestones) * 100) 
+      : 0;
+
+    // Calculate milestone progress
+    const milestonesWithProgress = goal.milestones.map(milestone => {
+      const totalTasks = milestone.tasks.length;
+      const completedTasks = milestone.tasks.filter(t => t.status === 'COMPLETED').length;
+      const milestoneProgress = totalTasks > 0 
+        ? Math.round((completedTasks / totalTasks) * 100) 
+        : 0;
+
+      return {
+        ...milestone,
+        progress: milestoneProgress,
+        taskCount: totalTasks,
+        completedTaskCount: completedTasks
+      };
+    });
+
+    res.json({
+      ...goal,
+      milestones: milestonesWithProgress,
+      progress,
+      milestoneCount: totalMilestones,
+      completedMilestoneCount: completedMilestones
+    });
+  } catch (error) {
+    console.error('Error fetching goal:', error);
+    res.status(500).json({ error: 'Failed to fetch goal', details: error.message });
+  }
 }
 
 /**
  * Update a goal
  */
 export async function updateGoal(req, res) {
-  // TODO: Implement with Prisma in Phase 1
-  res.status(501).json({ error: 'Not implemented yet' });
+  try {
+    const { id } = req.params;
+    const { title, description, targetDate, status } = req.body;
+
+    // Check if goal exists
+    const existingGoal = await prisma.goal.findUnique({ where: { id } });
+    if (!existingGoal) {
+      return res.status(404).json({ error: 'Goal not found' });
+    }
+
+    const updateData = {};
+    if (title !== undefined) updateData.title = title.trim();
+    if (description !== undefined) updateData.description = description?.trim() || null;
+    if (targetDate !== undefined) updateData.targetDate = targetDate ? new Date(targetDate) : null;
+    if (status !== undefined) updateData.status = status;
+
+    const goal = await prisma.goal.update({
+      where: { id },
+      data: updateData
+    });
+
+    res.json(goal);
+  } catch (error) {
+    console.error('Error updating goal:', error);
+    res.status(500).json({ error: 'Failed to update goal', details: error.message });
+  }
 }
 
 /**
- * Delete a goal
+ * Delete a goal (cascades to milestones and tasks)
  */
 export async function deleteGoal(req, res) {
-  // TODO: Implement with Prisma in Phase 1
-  res.status(501).json({ error: 'Not implemented yet' });
+  try {
+    const { id } = req.params;
+
+    // Check if goal exists
+    const existingGoal = await prisma.goal.findUnique({ where: { id } });
+    if (!existingGoal) {
+      return res.status(404).json({ error: 'Goal not found' });
+    }
+
+    await prisma.goal.delete({ where: { id } });
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting goal:', error);
+    res.status(500).json({ error: 'Failed to delete goal', details: error.message });
+  }
 }
 
 /**
  * Create a milestone under a goal
  */
 export async function createMilestone(req, res) {
-  // TODO: Implement with Prisma in Phase 1
-  res.status(501).json({ error: 'Not implemented yet' });
-}
+  try {
+    const { goalId } = req.params;
+    const { title, description, targetDate } = req.body;
 
-/**
- * AI suggest milestones for a goal
- */
-export async function suggestMilestones(req, res) {
-  // TODO: Implement in Phase 1
-  res.status(501).json({ error: 'Not implemented yet' });
+    if (!title || title.trim() === '') {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+
+    // Check if goal exists
+    const goal = await prisma.goal.findUnique({ where: { id: goalId } });
+    if (!goal) {
+      return res.status(404).json({ error: 'Goal not found' });
+    }
+
+    // Get the next order index
+    const lastMilestone = await prisma.milestone.findFirst({
+      where: { goalId },
+      orderBy: { orderIndex: 'desc' }
+    });
+    const orderIndex = lastMilestone ? lastMilestone.orderIndex + 1 : 0;
+
+    const milestone = await prisma.milestone.create({
+      data: {
+        goalId,
+        title: title.trim(),
+        description: description?.trim() || null,
+        targetDate: targetDate ? new Date(targetDate) : null,
+        orderIndex
+      }
+    });
+
+    res.status(201).json(milestone);
+  } catch (error) {
+    console.error('Error creating milestone:', error);
+    res.status(500).json({ error: 'Failed to create milestone', details: error.message });
+  }
 }
