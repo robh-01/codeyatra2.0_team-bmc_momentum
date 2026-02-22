@@ -1,22 +1,19 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useReducer, useRef, useEffect } from 'react'
 import { planningApi } from '../services/api'
 
-const ChatSchedular = () => {
-  const [messages, setMessages] = useState([])
-  const [input, setInput] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [scheduledTasks, setScheduledTasks] = useState([])
-  const [isInitialized, setIsInitialized] = useState(false)
-  const [error, setError] = useState(null)
-  const [totalWorkHours, setTotalWorkHours] = useState(0)
-  const [focusBlocks, setFocusBlocks] = useState(0)
-  const [streamingContent, setStreamingContent] = useState('')
-  const [thinkingMode, setThinkingMode] = useState(true)
-  const messagesEndRef = useRef(null)
-  const inputRef = useRef(null)
-
-  // Sample goals - in a real app, these would come from a global state/context
-  const [goals] = useState([
+// ── Initial state ────────────────────────────────────────────────
+const initialState = {
+  messages: [],
+  input: '',
+  isTyping: false,
+  scheduledTasks: [],
+  isInitialized: false,
+  error: null,
+  totalWorkHours: 0,
+  focusBlocks: 0,
+  streamingContent: '',
+  thinkingMode: true,
+  goals: [
     {
       id: 1,
       title: 'Launch SaaS MVP',
@@ -45,7 +42,45 @@ const ChatSchedular = () => {
         { id: 7, title: 'Respond to stakeholder feedback', done: false, priority: 'high' },
       ]
     }
-  ])
+  ],
+}
+
+// ── Reducer ──────────────────────────────────────────────────────
+function schedulerReducer(state, action) {
+  switch (action.type) {
+    case 'SET_FIELD':
+      return { ...state, [action.field]: action.value }
+    case 'TOGGLE_THINKING':
+      return { ...state, thinkingMode: !state.thinkingMode }
+    case 'START_TYPING':
+      return { ...state, isTyping: true, error: null, streamingContent: '' }
+    case 'STOP_TYPING':
+      return { ...state, isTyping: false }
+    case 'SEND_MESSAGE':
+      return { ...state, messages: action.messages, input: '', isTyping: true, error: null, streamingContent: '' }
+    case 'RECEIVE_MESSAGE':
+      return { ...state, messages: action.messages, streamingContent: '', isTyping: false }
+    case 'RECEIVE_ERROR':
+      return { ...state, error: action.error, messages: action.messages, streamingContent: '', isTyping: false }
+    case 'INIT_COMPLETE':
+      return { ...state, messages: action.messages, streamingContent: '', isInitialized: true, isTyping: false }
+    case 'FINALIZE_SCHEDULE':
+      return { ...state, scheduledTasks: action.tasks, totalWorkHours: action.totalWorkHours, focusBlocks: action.focusBlocks, messages: action.messages, isTyping: false }
+    case 'RESET':
+      return { ...state, messages: [], scheduledTasks: [], isInitialized: false, totalWorkHours: 0, focusBlocks: 0 }
+    default:
+      return state
+  }
+}
+
+const ChatSchedular = () => {
+  const [state, dispatch] = useReducer(schedulerReducer, initialState)
+  const {
+    messages, input, isTyping, scheduledTasks, isInitialized, error,
+    totalWorkHours, focusBlocks, streamingContent, thinkingMode, goals,
+  } = state
+  const messagesEndRef = useRef(null)
+  const inputRef = useRef(null)
 
   const quickActions = [
     "I want to focus on high priority tasks",
@@ -77,9 +112,7 @@ const ChatSchedular = () => {
   }, [isInitialized])
 
   const initializeChat = async () => {
-    setIsTyping(true)
-    setError(null)
-    setStreamingContent('')
+    dispatch({ type: 'START_TYPING' })
 
     try {
       const response = await planningApi.suggest(
@@ -92,32 +125,23 @@ const ChatSchedular = () => {
         },
         // Streaming callback
         (chunk, fullContent) => {
-          setStreamingContent(fullContent)
+          dispatch({ type: 'SET_FIELD', field: 'streamingContent', value: fullContent })
         }
       )
 
-      const initialMessages = [
-        {
-          role: 'assistant',
-          content: response.message
-        }
-      ]
-
-      setMessages(initialMessages)
-      setStreamingContent('')
-      setIsInitialized(true)
+      dispatch({
+        type: 'INIT_COMPLETE',
+        messages: [{ role: 'assistant', content: response.message }]
+      })
     } catch (err) {
-      setError(err.message)
-      setMessages([
-        {
+      dispatch({
+        type: 'INIT_COMPLETE',
+        messages: [{
           role: 'error',
           content: `Good morning! I'd love to help you plan your day, but I'm having trouble connecting to the AI service. Please make sure the server is running.\n\nError: ${err.message}`
-        }
-      ])
-      setStreamingContent('')
-      setIsInitialized(true)
-    } finally {
-      setIsTyping(false)
+        }]
+      })
+      dispatch({ type: 'SET_FIELD', field: 'error', value: err.message })
     }
   }
 
@@ -126,11 +150,7 @@ const ChatSchedular = () => {
     if (!messageText || isTyping) return
 
     const newMessages = [...messages, { role: 'user', content: messageText }]
-    setMessages(newMessages)
-    setInput('')
-    setIsTyping(true)
-    setError(null)
-    setStreamingContent('')
+    dispatch({ type: 'SEND_MESSAGE', messages: newMessages })
 
     try {
       // Check if user wants to finalize
@@ -143,15 +163,20 @@ const ChatSchedular = () => {
         const response = await planningApi.finalize({ conversationHistory: newMessages })
         
         if (response.schedule && response.schedule.length > 0) {
-          setScheduledTasks(response.schedule)
-          calculateStats(response.schedule)
-          setMessages([
-            ...newMessages,
-            {
-              role: 'assistant',
-              content: "I've finalized your schedule for tomorrow. You can see all tasks in the Daily View panel on the right. Feel free to ask me to make any adjustments, or click 'Confirm & Sync to Calendar' when you're ready!"
-            }
-          ])
+          const stats = calculateStats(response.schedule)
+          dispatch({
+            type: 'FINALIZE_SCHEDULE',
+            tasks: response.schedule,
+            totalWorkHours: stats.totalWorkHours,
+            focusBlocks: stats.focusBlocks,
+            messages: [
+              ...newMessages,
+              {
+                role: 'assistant',
+                content: "I've finalized your schedule for tomorrow. You can see all tasks in the Daily View panel on the right. Feel free to ask me to make any adjustments, or click 'Confirm & Sync to Calendar' when you're ready!"
+              }
+            ]
+          })
         } else {
           throw new Error('Could not extract schedule')
         }
@@ -169,7 +194,7 @@ const ChatSchedular = () => {
 
         // Streaming callback for both tweak and suggest
         const onChunk = (chunk, fullContent) => {
-          setStreamingContent(fullContent)
+          dispatch({ type: 'SET_FIELD', field: 'streamingContent', value: fullContent })
         }
 
         let response
@@ -196,21 +221,20 @@ const ChatSchedular = () => {
           )
         }
 
-        setMessages([...newMessages, { role: 'assistant', content: response.message }])
-        setStreamingContent('')
+        dispatch({ type: 'RECEIVE_MESSAGE', messages: [...newMessages, { role: 'assistant', content: response.message }] })
       }
     } catch (err) {
-      setError(err.message)
-      setMessages([
-        ...newMessages,
-        {
-          role: 'error',
-          content: `I encountered an issue: ${err.message}. Let me try to help you differently. What would you like to adjust in your schedule?`
-        }
-      ])
-      setStreamingContent('')
-    } finally {
-      setIsTyping(false)
+      dispatch({
+        type: 'RECEIVE_ERROR',
+        error: err.message,
+        messages: [
+          ...newMessages,
+          {
+            role: 'error',
+            content: `I encountered an issue: ${err.message}. Let me try to help you differently. What would you like to adjust in your schedule?`
+          }
+        ]
+      })
     }
   }
 
@@ -225,8 +249,7 @@ const ChatSchedular = () => {
       if (minutes >= 60) blocks++
     })
 
-    setTotalWorkHours((totalMinutes / 60).toFixed(1))
-    setFocusBlocks(blocks)
+    return { totalWorkHours: (totalMinutes / 60).toFixed(1), focusBlocks: blocks }
   }
 
   const handleKeyDown = (e) => {
@@ -242,13 +265,7 @@ const ChatSchedular = () => {
     return tomorrow.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
   }
 
-  const resetChat = () => {
-    setMessages([])
-    setScheduledTasks([])
-    setIsInitialized(false)
-    setTotalWorkHours(0)
-    setFocusBlocks(0)
-  }
+  const resetChat = () => dispatch({ type: 'RESET' })
 
   return (
     <div className="flex h-full">
@@ -278,7 +295,7 @@ const ChatSchedular = () => {
           <div className="flex items-center gap-2">
             {/* Thinking Mode Toggle */}
             <button 
-              onClick={() => setThinkingMode(!thinkingMode)}
+              onClick={() => dispatch({ type: 'TOGGLE_THINKING' })}
               title={thinkingMode ? "Thinking mode ON - AI will reason deeply" : "Thinking mode OFF - Faster responses"}
               className={`p-2 rounded-lg transition-all duration-300 flex items-center gap-1.5 ${
                 thinkingMode 
@@ -422,7 +439,7 @@ const ChatSchedular = () => {
               <input
                 ref={inputRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'input', value: e.target.value })}
                 onKeyDown={handleKeyDown}
                 disabled={isTyping}
                 placeholder="Tell AI how you want to plan your day..."

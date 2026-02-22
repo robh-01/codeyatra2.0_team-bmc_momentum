@@ -1,160 +1,354 @@
-import React, { useState } from 'react'
+import React, { useReducer, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import AIChat from '../components/UI/AIChat'
+import TaskCard from '../components/UI/TaskCard'
+import TaskDetailModal from '../components/UI/TaskDetailModal'
+import ManualTaskForm from '../components/UI/ManualTaskForm'
+import GoalStats from '../components/UI/GoalStats'
+import { collectAllDates } from '../components/UI/goalConstants'
+import { useGoals } from '../context/GoalsContext'
 import { goalApi } from '../services/api'
 
-const Goals = () => {
-  const [objective, setObjective] = useState('')
-  const [tasks, setTasks] = useState([])
-  const [showChat, setShowChat] = useState(false)
-  const [chatMessages, setChatMessages] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [streamingContent, setStreamingContent] = useState('')
-  const [thinkingMode, setThinkingMode] = useState(true)
+// ── Default manual task factory ──────────────────────────────────
+const defaultManualTask = () => ({
+  title: '',
+  description: '',
+  subtasks: [],
+  date: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+  priority: 'medium'
+})
 
-  // Start AI discussion when user enters a goal
+// ── Initial state ────────────────────────────────────────────────
+const initialState = {
+  objective: '',
+  tasks: [],
+  showChat: false,
+  chatMessages: [],
+  isLoading: false,
+  error: null,
+  streamingContent: '',
+  thinkingMode: true,
+  showManualForm: false,
+  manualTask: defaultManualTask(),
+  subtaskInput: '',
+  taskPath: [],
+  selectedTask: null,
+}
+
+// ── Reducer ──────────────────────────────────────────────────────
+function goalsReducer(state, action) {
+  switch (action.type) {
+    case 'SET_FIELD':
+      return { ...state, [action.field]: action.value }
+    case 'TOGGLE_FIELD':
+      return { ...state, [action.field]: !state[action.field] }
+    case 'START_LOADING':
+      return { ...state, isLoading: true, error: null, streamingContent: '' }
+    case 'STOP_LOADING':
+      return { ...state, isLoading: false }
+    case 'SET_CHAT_RESULT':
+      return { ...state, chatMessages: action.messages, streamingContent: '', isLoading: false }
+    case 'SET_CHAT_ERROR':
+      return { ...state, error: action.error, chatMessages: action.messages, streamingContent: '', isLoading: false }
+    case 'OPEN_CHAT':
+      return { ...state, showChat: true, isLoading: true, error: null, chatMessages: [], streamingContent: '' }
+    case 'APPLY_AI_TASKS':
+      return { ...state, tasks: action.tasks, taskPath: [], showChat: false, isLoading: false }
+    case 'OPEN_MANUAL_FORM':
+      return { ...state, manualTask: defaultManualTask(), subtaskInput: '', showManualForm: true }
+    case 'UPDATE_MANUAL_TASK':
+      return { ...state, manualTask: typeof action.updater === 'function' ? action.updater(state.manualTask) : action.updater }
+    case 'SUBMIT_MANUAL_TASK':
+      return { ...state, showManualForm: false }
+    case 'SET_TASKS':
+      return { ...state, tasks: typeof action.updater === 'function' ? action.updater(state.tasks) : action.updater }
+    case 'NAVIGATE_TO':
+      return { ...state, taskPath: state.taskPath.slice(0, action.index) }
+    case 'DRILL_INTO':
+      return { ...state, taskPath: [...state.taskPath, { id: action.task.id, title: action.task.title }], selectedTask: null }
+    case 'SELECT_TASK':
+      return { ...state, selectedTask: action.task }
+    case 'UPDATE_SELECTED_TASK':
+      return { ...state, selectedTask: typeof action.updater === 'function' ? action.updater(state.selectedTask) : action.updater }
+    default:
+      return state
+  }
+}
+
+const Goals = () => {
+  const { addGoal, updateGoalTasks } = useGoals()
+  const [state, dispatch] = useReducer(goalsReducer, initialState)
+  const {
+    objective, tasks, showChat, chatMessages, isLoading, error,
+    streamingContent, thinkingMode, showManualForm, manualTask,
+    subtaskInput, taskPath, selectedTask,
+  } = state
+
+  // ── AI Discussion ──────────────────────────────────────────────
+
   const startGoalDiscussion = async () => {
     if (!objective.trim()) return
+    dispatch({ type: 'OPEN_CHAT' })
 
-    setShowChat(true)
-    setIsLoading(true)
-    setError(null)
-    setChatMessages([])
-    setStreamingContent('')
-
-    // Add user message immediately
-    const userMessage = { 
-      role: 'user', 
-      content: `I want to achieve this goal: "${objective}". Can you help me break it down into manageable subgoals?` 
+    const userMessage = {
+      role: 'user',
+      content: `I want to achieve this goal: "${objective}". Can you help me break it down into manageable subgoals?`
     }
-    setChatMessages([userMessage])
+    dispatch({ type: 'SET_FIELD', field: 'chatMessages', value: [userMessage] })
 
     try {
       const response = await goalApi.discuss(
         { goal: objective, conversationHistory: [], enableThinking: thinkingMode },
-        // Streaming callback - receives each chunk of text
-        (chunk, fullContent) => {
-          setStreamingContent(fullContent)
-        }
+        (chunk, fullContent) => dispatch({ type: 'SET_FIELD', field: 'streamingContent', value: fullContent })
       )
-      
-      // Once complete, add the full message to chat history
-      setChatMessages([userMessage, { role: 'assistant', content: response.message }])
-      setStreamingContent('')
+      dispatch({ type: 'SET_CHAT_RESULT', messages: [userMessage, { role: 'assistant', content: response.message }] })
     } catch (err) {
-      setError(err.message)
-      setChatMessages([
-        userMessage,
-        { role: 'error', content: `Sorry, I encountered an error: ${err.message}. Please make sure the server is running.` }
-      ])
-      setStreamingContent('')
-    } finally {
-      setIsLoading(false)
+      dispatch({
+        type: 'SET_CHAT_ERROR',
+        error: err.message,
+        messages: [userMessage, { role: 'error', content: `Sorry, I encountered an error: ${err.message}. Please make sure the server is running.` }]
+      })
     }
   }
 
-  // Continue the conversation
   const handleSendMessage = async (message) => {
     const newMessages = [...chatMessages, { role: 'user', content: message }]
-    setChatMessages(newMessages)
-    setIsLoading(true)
-    setError(null)
-    setStreamingContent('')
+    dispatch({ type: 'SET_FIELD', field: 'chatMessages', value: newMessages })
+    dispatch({ type: 'START_LOADING' })
 
     try {
       const response = await goalApi.discuss(
-        {
-          goal: objective,
-          conversationHistory: newMessages,
-          userMessage: message,
-          enableThinking: thinkingMode
-        },
-        // Streaming callback
-        (chunk, fullContent) => {
-          setStreamingContent(fullContent)
-        }
+        { goal: objective, conversationHistory: newMessages, userMessage: message, enableThinking: thinkingMode },
+        (chunk, fullContent) => dispatch({ type: 'SET_FIELD', field: 'streamingContent', value: fullContent })
       )
-      
-      // Once complete, add the full message to chat history
-      setChatMessages([...newMessages, { role: 'assistant', content: response.message }])
-      setStreamingContent('')
+      dispatch({ type: 'SET_CHAT_RESULT', messages: [...newMessages, { role: 'assistant', content: response.message }] })
     } catch (err) {
-      setError(err.message)
-      setChatMessages([
-        ...newMessages,
-        { role: 'error', content: `Sorry, I encountered an error: ${err.message}` }
-      ])
-      setStreamingContent('')
-    } finally {
-      setIsLoading(false)
+      dispatch({
+        type: 'SET_CHAT_ERROR',
+        error: err.message,
+        messages: [...newMessages, { role: 'error', content: `Sorry, I encountered an error: ${err.message}` }]
+      })
     }
   }
 
-  // Extract and apply AI-suggested subgoals
   const applyAISuggestions = async () => {
     if (chatMessages.length < 2) return
-
-    setIsLoading(true)
-    setError(null)
+    dispatch({ type: 'START_LOADING' })
 
     try {
       const response = await goalApi.extractSubgoals({
         goal: objective,
         conversationHistory: chatMessages
       })
-
       if (response.subgoals && response.subgoals.length > 0) {
         const newTasks = response.subgoals.map((subgoal, index) => ({
           id: Date.now() + index,
           title: subgoal.title,
-          description: subgoal.description,
           date: new Date(Date.now() + (subgoal.estimatedDays || 7) * 86400000).toISOString().split('T')[0],
           priority: subgoal.priority || 'medium',
-          done: false
+          status: 'pending',
+          subtasks: []
         }))
-        setTasks(newTasks)
-        setShowChat(false)
+        dispatch({ type: 'APPLY_AI_TASKS', tasks: newTasks })
       }
     } catch (err) {
-      setError(err.message)
-      setChatMessages([
-        ...chatMessages,
-        { role: 'assistant', content: `I couldn't extract the subgoals automatically. You can add them manually from our discussion.` }
-      ])
+      dispatch({
+        type: 'SET_CHAT_ERROR',
+        error: err.message,
+        messages: [...chatMessages, { role: 'assistant', content: `I couldn't extract the subgoals automatically. You can add them manually from our discussion.` }]
+      })
     } finally {
-      setIsLoading(false)
+      dispatch({ type: 'STOP_LOADING' })
     }
   }
 
-  const addTask = () => {
+  // ── Manual Form Helpers ────────────────────────────────────────
+
+  const openManualForm = () => dispatch({ type: 'OPEN_MANUAL_FORM' })
+
+  const addSubtaskToForm = () => {
+    if (!subtaskInput.trim()) return
+    dispatch({
+      type: 'UPDATE_MANUAL_TASK',
+      updater: prev => ({
+        ...prev,
+        subtasks: [...prev.subtasks, { id: Date.now(), title: subtaskInput.trim(), status: 'pending', date: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0], subtasks: [] }]
+      })
+    })
+    dispatch({ type: 'SET_FIELD', field: 'subtaskInput', value: '' })
+  }
+
+  const addNestedFormSubtask = (subtasks, parentId, newSub) => {
+    return subtasks.map(s => {
+      if (s.id === parentId) return { ...s, subtasks: [...(s.subtasks || []), newSub] }
+      if (s.subtasks && s.subtasks.length > 0) return { ...s, subtasks: addNestedFormSubtask(s.subtasks, parentId, newSub) }
+      return s
+    })
+  }
+
+  const removeNestedFormSubtask = (subtasks, targetId) => {
+    return subtasks
+      .filter(s => s.id !== targetId)
+      .map(s => ({ ...s, subtasks: s.subtasks ? removeNestedFormSubtask(s.subtasks, targetId) : [] }))
+  }
+
+  const handleAddNestedSubtask = (parentId, title) => {
+    if (!title.trim()) return
+    const newSub = { id: Date.now() + Math.random(), title: title.trim(), status: 'pending', date: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0], subtasks: [] }
+    dispatch({ type: 'UPDATE_MANUAL_TASK', updater: prev => ({ ...prev, subtasks: addNestedFormSubtask(prev.subtasks, parentId, newSub) }) })
+  }
+
+  const handleRemoveNestedSubtask = (targetId) => {
+    dispatch({ type: 'UPDATE_MANUAL_TASK', updater: prev => ({ ...prev, subtasks: removeNestedFormSubtask(prev.subtasks, targetId) }) })
+  }
+
+  const submitManualTask = (e) => {
+    e.preventDefault()
+    if (!manualTask.title.trim()) return
     const newTask = {
       id: Date.now(),
-      title: '',
-      date: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
-      priority: 'medium',
-      done: false,
-      editing: true,
+      title: manualTask.title.trim(),
+      description: manualTask.description.trim(),
+      date: manualTask.date,
+      priority: manualTask.priority,
+      status: 'pending',
+      subtasks: manualTask.subtasks,
     }
-    setTasks(prev => [...prev, newTask])
+    if (taskPath.length > 0) {
+      dispatch({ type: 'SET_TASKS', updater: prev => addNestedSubtask(prev, taskPath, newTask) })
+    } else {
+      dispatch({ type: 'SET_TASKS', updater: prev => [...prev, newTask] })
+    }
+    dispatch({ type: 'SUBMIT_MANUAL_TASK' })
   }
 
-  const updateTask = (id, field, value) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t))
+  // ── Task Tree Helpers ──────────────────────────────────────────
+
+  const addNestedSubtask = (taskList, path, newTask) => {
+    if (path.length === 0) return [...taskList, newTask]
+    return taskList.map(t => {
+      if (t.id === path[0].id) return { ...t, subtasks: addNestedSubtask(t.subtasks || [], path.slice(1), newTask) }
+      return t
+    })
+  }
+
+  const getVisibleTasks = () => {
+    let current = tasks
+    for (const crumb of taskPath) {
+      const found = current.find(t => t.id === crumb.id)
+      if (!found) return []
+      current = found.subtasks || []
+    }
+    return current
+  }
+
+  const drillIntoTask = (task) => {
+    dispatch({ type: 'DRILL_INTO', task })
+  }
+
+  const navigateTo = (index) => dispatch({ type: 'NAVIGATE_TO', index })
+
+  const updateNestedTasks = (taskList, path, id, updater) => {
+    if (path.length === 0) return taskList.map(t => t.id === id ? updater(t) : t)
+    return taskList.map(t => {
+      if (t.id === path[0].id) return { ...t, subtasks: updateNestedTasks(t.subtasks || [], path.slice(1), id, updater) }
+      return t
+    })
+  }
+
+  const filterNestedTasks = (taskList, path, id) => {
+    if (path.length === 0) return taskList.filter(t => t.id !== id)
+    return taskList.map(t => {
+      if (t.id === path[0].id) return { ...t, subtasks: filterNestedTasks(t.subtasks || [], path.slice(1), id) }
+      return t
+    })
+  }
+
+  const autoCompleteParents = (taskList) => {
+    return taskList.map(t => {
+      if (!t.subtasks || t.subtasks.length === 0) return t
+      const updatedSubs = autoCompleteParents(t.subtasks)
+      const allDone = updatedSubs.length > 0 && updatedSubs.every(s => s.status === 'completed')
+      return { ...t, subtasks: updatedSubs, status: allDone ? 'completed' : t.status }
+    })
   }
 
   const deleteTask = (id) => {
-    setTasks(prev => prev.filter(t => t.id !== id))
+    dispatch({ type: 'SET_TASKS', updater: prev => filterNestedTasks(prev, taskPath, id) })
+    dispatch({ type: 'SELECT_TASK', task: null })
   }
 
-  const toggleTask = (id) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t))
+  const cycleStatus = (id) => {
+    const order = ['pending', 'active', 'completed']
+    dispatch({
+      type: 'SET_TASKS',
+      updater: prev => autoCompleteParents(updateNestedTasks(prev, taskPath, id, t => {
+        const currentIdx = order.indexOf(t.status || 'pending')
+        return { ...t, status: order[(currentIdx + 1) % order.length] }
+      }))
+    })
   }
+
+  const setTaskStatus = (id, status) => {
+    dispatch({ type: 'SET_TASKS', updater: prev => autoCompleteParents(updateNestedTasks(prev, taskPath, id, t => ({ ...t, status }))) })
+    dispatch({ type: 'UPDATE_SELECTED_TASK', updater: prev => prev ? { ...prev, status } : null })
+  }
+
+  // ── Deep update helpers for detail modal subtask interactions ──
+
+  const updateDeepById = (list, targetId, updater) => {
+    return list.map(t => {
+      if (t.id === targetId) return updater(t)
+      if (t.subtasks) return { ...t, subtasks: updateDeepById(t.subtasks, targetId, updater) }
+      return t
+    })
+  }
+
+  const cycleSubtaskStatus = (subId) => {
+    const order = ['pending', 'active', 'completed']
+    const updater = (t) => {
+      const idx = order.indexOf(t.status || 'pending')
+      return { ...t, status: order[(idx + 1) % order.length] }
+    }
+    dispatch({ type: 'SET_TASKS', updater: prev => autoCompleteParents(updateDeepById(prev, subId, updater)) })
+    dispatch({
+      type: 'UPDATE_SELECTED_TASK',
+      updater: prev => {
+        if (!prev) return prev
+        const updatedSubs = updateDeepById(prev.subtasks || [], subId, updater)
+        const allDone = updatedSubs.length > 0 && updatedSubs.every(s => s.status === 'completed')
+        return { ...prev, subtasks: updatedSubs, status: allDone ? 'completed' : prev.status }
+      }
+    })
+  }
+
+  const updateSubtaskDate = (subId, newDate) => {
+    const updater = (t) => ({ ...t, date: newDate })
+    dispatch({ type: 'SET_TASKS', updater: prev => updateDeepById(prev, subId, updater) })
+    dispatch({
+      type: 'UPDATE_SELECTED_TASK',
+      updater: prev => {
+        if (!prev) return prev
+        return { ...prev, subtasks: updateDeepById(prev.subtasks || [], subId, updater) }
+      }
+    })
+  }
+
+  // ── Computed Stats ─────────────────────────────────────────────
 
   const totalTasks = tasks.length
-  const completionDays = tasks.length > 0 
-    ? Math.max(1, Math.ceil((new Date(Math.max(...tasks.map(t => new Date(t.date)))) - new Date()) / 86400000))
-    : 0
+  const completedTasks = tasks.filter(t => t.status === 'completed').length
+  const activeTasks = tasks.filter(t => t.status === 'active').length
+  const pendingTasks = tasks.filter(t => t.status === 'pending' || !t.status).length
+  const completionDays = (() => {
+    const allDates = collectAllDates(tasks)
+    if (allDates.length === 0) return 0
+    const latest = new Date(Math.max(...allDates))
+    const earliest = new Date(Math.min(...allDates))
+    const fromNow = Math.ceil((latest - new Date()) / 86400000)
+    const span = Math.ceil((latest - earliest) / 86400000)
+    return Math.max(1, Math.max(fromNow, span))
+  })()
 
   const quickActions = [
     "I have about 3 months for this",
@@ -163,11 +357,7 @@ const Goals = () => {
     "These look good, finalize them"
   ]
 
-  const priorityColors = {
-    high: 'bg-red-100 text-red-700',
-    medium: 'bg-amber-100 text-amber-700',
-    low: 'bg-emerald-100 text-emerald-700'
-  }
+  // ── Render ─────────────────────────────────────────────────────
 
   return (
     <div className="flex h-full">
@@ -208,18 +398,17 @@ const Goals = () => {
               id="objective-input"
               type="text"
               value={objective}
-              onChange={(e) => setObjective(e.target.value)}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'objective', value: e.target.value })}
               onKeyDown={(e) => e.key === 'Enter' && startGoalDiscussion()}
               placeholder="e.g., Launch my SaaS MVP by Q3, Learn Spanish to conversational level..."
               className="flex-1 px-5 py-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
             />
-            {/* Thinking Mode Toggle */}
             <button
-              onClick={() => setThinkingMode(!thinkingMode)}
+              onClick={() => dispatch({ type: 'TOGGLE_FIELD', field: 'thinkingMode' })}
               title={thinkingMode ? "Thinking mode ON - AI will reason deeply" : "Thinking mode OFF - Faster responses"}
               className={`px-4 py-4 rounded-2xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 border-2 ${
-                thinkingMode 
-                  ? 'bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100' 
+                thinkingMode
+                  ? 'bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100'
                   : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
               }`}
             >
@@ -259,10 +448,10 @@ const Goals = () => {
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <h2 id="milestones-heading" className="text-lg font-bold text-gray-900">Subgoals & Tasks</h2>
+              <h2 id="milestones-heading" className="text-lg font-bold text-gray-900">Goals or Tsks</h2>
             </div>
             <button
-              onClick={addTask}
+              onClick={openManualForm}
               className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:border-indigo-200 hover:text-indigo-600 transition-all duration-200 flex items-center gap-1.5"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -271,131 +460,75 @@ const Goals = () => {
               Add Manually
             </button>
           </div>
+
+          {/* Breadcrumb Navigation */}
+          {taskPath.length > 0 && (
+            <div className="flex items-center gap-1.5 mb-4 flex-wrap">
+              <button onClick={() => navigateTo(0)} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
+                Main Tasks
+              </button>
+              {taskPath.map((crumb, i) => (
+                <React.Fragment key={crumb.id}>
+                  <svg className="w-3.5 h-3.5 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <button
+                    onClick={() => navigateTo(i + 1)}
+                    className={`text-xs font-semibold transition-colors truncate max-w-[140px] ${
+                      i === taskPath.length - 1 ? 'text-gray-800 cursor-default' : 'text-indigo-600 hover:text-indigo-800'
+                    }`}
+                    title={crumb.title}
+                  >
+                    {crumb.title}
+                  </button>
+                </React.Fragment>
+              ))}
+            </div>
+          )}
+
           <p className="text-sm text-gray-400 mb-5">
-            {tasks.length === 0 
-              ? "Enter a goal above and discuss it with AI to generate subgoals, or add them manually."
-              : "These subgoals were generated from your AI conversation. Feel free to edit them."}
+            {taskPath.length > 0
+              ? `Subtasks of "${taskPath[taskPath.length - 1].title}"`
+              : tasks.length === 0
+                ? "Enter a goal above and discuss it with AI to generate subgoals, or add them manually."
+                : "These subgoals were generated from your AI conversation. Feel free to edit them."}
           </p>
 
-          {tasks.length === 0 ? (
+          {getVisibleTasks().length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
               <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
               </div>
-              <p className="text-gray-500 mb-2">No subgoals yet</p>
-              <p className="text-sm text-gray-400">Start a conversation with AI to break down your goal</p>
+              <p className="text-gray-500 mb-2">{taskPath.length > 0 ? 'No subtasks yet' : 'No subgoals yet'}</p>
+              <p className="text-sm text-gray-400">{taskPath.length > 0 ? 'Click "Add Manually" to add subtasks here' : 'Start a conversation with AI to break down your goal'}</p>
             </div>
           ) : (
-            <ul className="space-y-3" role="list">
-              {tasks.map((task) => (
-                <li
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="list">
+              {getVisibleTasks().map((task) => (
+                <TaskCard
                   key={task.id}
-                  className={`flex items-center gap-4 px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-gray-200 transition-all duration-200 group ${
-                    task.done ? 'opacity-50' : ''
-                  }`}
-                >
-                  <button
-                    onClick={() => toggleTask(task.id)}
-                    aria-label={`Mark "${task.title || 'Untitled task'}" as ${task.done ? 'incomplete' : 'complete'}`}
-                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 shrink-0 ${
-                      task.done
-                        ? 'bg-indigo-600 border-indigo-600'
-                        : 'border-gray-300 hover:border-indigo-400'
-                    }`}
-                  >
-                    {task.done && (
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                  {task.editing ? (
-                    <input
-                      type="text"
-                      autoFocus
-                      placeholder="Enter task title..."
-                      value={task.title}
-                      onChange={(e) => updateTask(task.id, 'title', e.target.value)}
-                      onBlur={() => updateTask(task.id, 'editing', false)}
-                      onKeyDown={(e) => e.key === 'Enter' && updateTask(task.id, 'editing', false)}
-                      className="flex-1 text-sm text-gray-800 bg-transparent border-none outline-none"
-                      aria-label="Task title"
-                    />
-                  ) : (
-                    <div className="flex-1">
-                      <span
-                        className={`text-sm font-medium cursor-pointer ${task.done ? 'line-through text-gray-400' : 'text-gray-800'}`}
-                        onClick={() => updateTask(task.id, 'editing', true)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => e.key === 'Enter' && updateTask(task.id, 'editing', true)}
-                      >
-                        {task.title || 'Untitled task'}
-                      </span>
-                      {task.description && (
-                        <p className="text-xs text-gray-400 mt-0.5">{task.description}</p>
-                      )}
-                    </div>
-                  )}
-                  <div className="flex items-center gap-3 ml-auto">
-                    {task.priority && (
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase ${priorityColors[task.priority]}`}>
-                        {task.priority}
-                      </span>
-                    )}
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <input
-                        type="date"
-                        value={task.date}
-                        onChange={(e) => updateTask(task.id, 'date', e.target.value)}
-                        className="text-xs text-gray-500 bg-transparent border-none outline-none cursor-pointer"
-                        aria-label={`Due date for "${task.title || 'Untitled task'}"`}
-                      />
-                    </div>
-                    <button
-                      onClick={() => deleteTask(task.id)}
-                      aria-label={`Delete "${task.title || 'Untitled task'}"`}
-                      className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all text-gray-400"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </li>
+                  task={task}
+                  onSelect={(task) => dispatch({ type: 'SELECT_TASK', task })}
+                  onCycleStatus={cycleStatus}
+                  onDrillInto={drillIntoTask}
+                  onDelete={deleteTask}
+                />
               ))}
-            </ul>
+            </div>
           )}
         </section>
 
-        {/* Bottom Stats & Actions */}
+        {/* Bottom Stats */}
         {tasks.length > 0 && (
-          <div className="flex items-center justify-between mb-8 px-1 animate-slide-up stagger-3">
-            <div className="flex items-center gap-6">
-              <div>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Total Subgoals</p>
-                <p className="text-2xl font-extrabold text-gray-900">{totalTasks}</p>
-              </div>
-              <div className="w-px h-10 bg-gray-200" aria-hidden="true"></div>
-              <div>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Estimated Timeline</p>
-                <p className="text-2xl font-extrabold text-gray-900">{completionDays} Days</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button className="px-6 py-3 text-gray-600 font-medium text-sm hover:text-gray-800 transition-colors">
-                Save Draft
-              </button>
-              <button className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300">
-                Create Goal
-              </button>
-            </div>
-          </div>
+          <GoalStats
+            totalTasks={totalTasks}
+            completedTasks={completedTasks}
+            activeTasks={activeTasks}
+            pendingTasks={pendingTasks}
+            completionDays={completionDays}
+          />
         )}
       </div>
 
@@ -405,13 +538,12 @@ const Goals = () => {
           <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
             <h3 className="font-semibold text-gray-900">Goal Discussion</h3>
             <div className="flex items-center gap-2">
-              {/* Thinking Mode Toggle */}
               <button
-                onClick={() => setThinkingMode(!thinkingMode)}
-                title={thinkingMode ? "Thinking mode ON - AI will reason deeply" : "Thinking mode OFF - Faster responses"}
+                onClick={() => dispatch({ type: 'TOGGLE_FIELD', field: 'thinkingMode' })}
+                title={thinkingMode ? "Thinking mode ON" : "Thinking mode OFF"}
                 className={`p-1.5 rounded-lg transition-all duration-300 flex items-center gap-1 ${
-                  thinkingMode 
-                    ? 'bg-purple-100 text-purple-600 hover:bg-purple-200' 
+                  thinkingMode
+                    ? 'bg-purple-100 text-purple-600 hover:bg-purple-200'
                     : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                 }`}
               >
@@ -428,7 +560,7 @@ const Goals = () => {
                 Apply Suggestions
               </button>
               <button
-                onClick={() => setShowChat(false)}
+                onClick={() => dispatch({ type: 'SET_FIELD', field: 'showChat', value: false })}
                 className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-400"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -452,9 +584,37 @@ const Goals = () => {
         </div>
       )}
 
+      {/* Manual Task Form Modal */}
+      {showManualForm && (
+        <ManualTaskForm
+          manualTask={manualTask}
+          setManualTask={(updater) => dispatch({ type: 'UPDATE_MANUAL_TASK', updater })}
+          subtaskInput={subtaskInput}
+          setSubtaskInput={(value) => dispatch({ type: 'SET_FIELD', field: 'subtaskInput', value })}
+          onAddSubtask={addSubtaskToForm}
+          onAddNestedSubtask={handleAddNestedSubtask}
+          onRemoveNestedSubtask={handleRemoveNestedSubtask}
+          onSubmit={submitManualTask}
+          onClose={() => dispatch({ type: 'SET_FIELD', field: 'showManualForm', value: false })}
+        />
+      )}
+
+      {/* Task Detail Modal */}
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          onClose={() => dispatch({ type: 'SELECT_TASK', task: null })}
+          onSetStatus={setTaskStatus}
+          onCycleSubtaskStatus={cycleSubtaskStatus}
+          onUpdateSubtaskDate={updateSubtaskDate}
+          onDrillInto={drillIntoTask}
+          onDelete={deleteTask}
+        />
+      )}
+
       {/* Floating AI Button (when chat is closed) */}
       {!showChat && objective && (
-        <button 
+        <button
           onClick={startGoalDiscussion}
           className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-indigo-200 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
           aria-label="Open AI assistant"

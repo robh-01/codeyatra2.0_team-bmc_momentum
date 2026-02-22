@@ -1,11 +1,27 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useReducer, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+
+// ── Reducer ──────────────────────────────────────────────────────
+const initialTimer = { totalSeconds: 25 * 60, isRunning: true, isPaused: false }
+
+function timerReducer(state, action) {
+  switch (action.type) {
+    case 'TICK':
+      if (state.totalSeconds <= 0) return { ...state, isRunning: false, totalSeconds: 0 }
+      return { ...state, totalSeconds: state.totalSeconds - 1 }
+    case 'TOGGLE_PAUSE':
+      return { ...state, isPaused: !state.isPaused }
+    case 'COMPLETE':
+      return { ...state, isRunning: false, totalSeconds: 0 }
+    default:
+      return state
+  }
+}
 
 const FocusMode = () => {
   const navigate = useNavigate()
-  const [totalSeconds, setTotalSeconds] = useState(25 * 60)
-  const [isRunning, setIsRunning] = useState(true)
-  const [isPaused, setIsPaused] = useState(false)
+  const [state, dispatch] = useReducer(timerReducer, initialTimer)
+  const { totalSeconds, isRunning, isPaused } = state
   const intervalRef = useRef(null)
 
   const currentSession = 2
@@ -15,14 +31,7 @@ const FocusMode = () => {
   useEffect(() => {
     if (isRunning && !isPaused) {
       intervalRef.current = setInterval(() => {
-        setTotalSeconds(prev => {
-          if (prev <= 0) {
-            clearInterval(intervalRef.current)
-            setIsRunning(false)
-            return 0
-          }
-          return prev - 1
-        })
+        dispatch({ type: 'TICK' })
       }, 1000)
     }
     return () => clearInterval(intervalRef.current)
@@ -35,12 +44,11 @@ const FocusMode = () => {
   const strokeDashoffset = circumference * (1 - progress)
 
   const togglePause = useCallback(() => {
-    setIsPaused(prev => !prev)
+    dispatch({ type: 'TOGGLE_PAUSE' })
   }, [])
 
   const completeTask = useCallback(() => {
-    setIsRunning(false)
-    setTotalSeconds(0)
+    dispatch({ type: 'COMPLETE' })
   }, [])
 
   // Keyboard shortcuts

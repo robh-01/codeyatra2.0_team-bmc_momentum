@@ -9,9 +9,11 @@ import Goals from './pages/Goals'
 import FocusMode from './pages/FocusMode'
 import Analytics from './pages/Analytics'
 import Leaderboard from './pages/Leaderboard'
+import { GoalsProvider } from './context/GoalsContext'
 
 const App = () => {
   return (
+    <GoalsProvider>
     <BrowserRouter>
       <Routes>
         {/* Full-screen immersive page */}
@@ -32,6 +34,7 @@ const App = () => {
         </Route>
       </Routes>
     </BrowserRouter>
+    </GoalsProvider>
   )
 }
 
