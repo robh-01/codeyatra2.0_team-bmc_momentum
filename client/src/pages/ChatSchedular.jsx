@@ -134,9 +134,6 @@ const ChatSchedular = () => {
         messages: [{ role: 'assistant', content: response.message }]
       })
     } catch (err) {
-      dispatch({
-        type: 'INIT_COMPLETE',
-        messages: [{
           role: 'error',
           content: `Good morning! I'd love to help you plan your day, but I'm having trouble connecting to the AI service. Please make sure the server is running.\n\nError: ${err.message}`
         }]
@@ -224,17 +221,6 @@ const ChatSchedular = () => {
         dispatch({ type: 'RECEIVE_MESSAGE', messages: [...newMessages, { role: 'assistant', content: response.message }] })
       }
     } catch (err) {
-      dispatch({
-        type: 'RECEIVE_ERROR',
-        error: err.message,
-        messages: [
-          ...newMessages,
-          {
-            role: 'error',
-            content: `I encountered an issue: ${err.message}. Let me try to help you differently. What would you like to adjust in your schedule?`
-          }
-        ]
-      })
     }
   }
 

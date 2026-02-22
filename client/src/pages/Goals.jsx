@@ -103,11 +103,6 @@ const Goals = () => {
       )
       dispatch({ type: 'SET_CHAT_RESULT', messages: [userMessage, { role: 'assistant', content: response.message }] })
     } catch (err) {
-      dispatch({
-        type: 'SET_CHAT_ERROR',
-        error: err.message,
-        messages: [userMessage, { role: 'error', content: `Sorry, I encountered an error: ${err.message}. Please make sure the server is running.` }]
-      })
     }
   }
 
@@ -123,11 +118,6 @@ const Goals = () => {
       )
       dispatch({ type: 'SET_CHAT_RESULT', messages: [...newMessages, { role: 'assistant', content: response.message }] })
     } catch (err) {
-      dispatch({
-        type: 'SET_CHAT_ERROR',
-        error: err.message,
-        messages: [...newMessages, { role: 'error', content: `Sorry, I encountered an error: ${err.message}` }]
-      })
     }
   }
 
