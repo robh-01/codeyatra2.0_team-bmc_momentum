@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { Ollama } from 'ollama';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
@@ -12,19 +12,54 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Initialize Ollama client for cloud API
-const ollama = new Ollama({
-  host: 'https://ollama.com',
-  headers: {
-    Authorization: `Bearer ${process.env.OLLAMA_API_KEY}`,
-  },
-});
+// Google AI configuration
+const GOOGLE_AI_API_KEY = process.env.GOOGLE_AI_API_KEY;
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
-const MODEL = process.env.OLLAMA_MODEL || 'llama3.1';
+if (!GOOGLE_AI_API_KEY) {
+  console.error('ERROR: GOOGLE_AI_API_KEY is required. Get one at https://aistudio.google.com/apikey');
+  process.exit(1);
+}
+
+const ai = new GoogleGenAI({ apiKey: GOOGLE_AI_API_KEY });
+
+console.log(`Using Google AI model: ${MODEL}`);
+
+// Helper function to chat with Gemini
+async function chatWithGemini(messages, systemPrompt = '') {
+  // Build contents array for the new SDK format
+  const contents = messages.map(msg => ({
+    role: msg.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: msg.content }]
+  }));
+
+  const response = await ai.models.generateContent({
+    model: MODEL,
+    contents,
+    config: {
+      systemInstruction: systemPrompt || undefined
+    }
+  });
+
+  return response.text;
+}
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', model: MODEL });
+app.get('/api/health', async (req, res) => {
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL,
+      contents: 'Say "OK" if you are working.'
+    });
+    res.json({ 
+      status: 'ok', 
+      model: MODEL, 
+      provider: 'Google AI (Gemini)',
+      test: response.text 
+    });
+  } catch (error) {
+    res.json({ status: 'error', model: MODEL, error: error.message });
+  }
 });
 
 // Goal Discussion endpoint - AI discusses a goal with the user and suggests subgoals
@@ -51,10 +86,7 @@ Format your subgoal suggestions clearly when providing them:
 - Include estimated time/effort when relevant
 - Group related subgoals if needed`;
 
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...conversationHistory,
-    ];
+    const messages = [...conversationHistory];
 
     // If this is the first message about a new goal
     if (goal && conversationHistory.length === 0) {
@@ -66,14 +98,10 @@ Format your subgoal suggestions clearly when providing them:
       messages.push({ role: 'user', content: userMessage });
     }
 
-    const response = await ollama.chat({
-      model: MODEL,
-      messages,
-      stream: false,
-    });
+    const content = await chatWithGemini(messages, systemPrompt);
 
     res.json({
-      message: response.message.content,
+      message: content,
       role: 'assistant',
     });
   } catch (error) {
@@ -93,7 +121,7 @@ app.post('/api/goals/extract-subgoals', async (req, res) => {
 
     const systemPrompt = `Based on the conversation about the user's goal, extract the final agreed-upon subgoals.
 
-Return ONLY a JSON array with the following structure (no other text):
+Return ONLY a JSON array with the following structure (no other text, no markdown code blocks):
 [
   {
     "title": "Subgoal title",
@@ -106,25 +134,19 @@ Return ONLY a JSON array with the following structure (no other text):
 Consider the user's feedback and preferences from the conversation when finalizing the subgoals.`;
 
     const messages = [
-      { role: 'system', content: systemPrompt },
       ...conversationHistory,
       {
         role: 'user',
-        content: `Please extract the final subgoals we discussed for my goal: "${goal}". Return them as a JSON array.`,
+        content: `Please extract the final subgoals we discussed for my goal: "${goal}". Return them as a JSON array only, no other text.`,
       },
     ];
 
-    const response = await ollama.chat({
-      model: MODEL,
-      messages,
-      stream: false,
-    });
+    const content = await chatWithGemini(messages, systemPrompt);
 
     // Try to parse the JSON response
     let subgoals;
     try {
-      const content = response.message.content;
-      // Extract JSON from the response (in case there's extra text)
+      // Extract JSON from the response (in case there's extra text or markdown)
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         subgoals = JSON.parse(jsonMatch[0]);
@@ -133,6 +155,7 @@ Consider the user's feedback and preferences from the conversation when finalizi
       }
     } catch (parseError) {
       console.error('Failed to parse subgoals:', parseError);
+      console.error('Raw response:', content);
       return res.status(500).json({ error: 'Failed to parse subgoals from AI response' });
     }
 
@@ -175,10 +198,7 @@ Format your suggestions clearly with estimated time for each task.`;
       return `Goal: ${g.title}\nProgress: ${g.progress || 0}%\nTasks:\n${tasksStr}`;
     }).join('\n\n');
 
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...conversationHistory,
-    ];
+    const messages = [...conversationHistory];
 
     if (conversationHistory.length === 0) {
       let userContent = `Here are my current goals and tasks:\n\n${goalsContext}\n\n`;
@@ -192,14 +212,10 @@ Format your suggestions clearly with estimated time for each task.`;
       messages.push({ role: 'user', content: userContent });
     }
 
-    const response = await ollama.chat({
-      model: MODEL,
-      messages,
-      stream: false,
-    });
+    const content = await chatWithGemini(messages, systemPrompt);
 
     res.json({
-      message: response.message.content,
+      message: content,
       role: 'assistant',
     });
   } catch (error) {
@@ -231,19 +247,14 @@ When adjusting time allocations:
 Provide the updated schedule clearly.`;
 
     const messages = [
-      { role: 'system', content: systemPrompt },
       ...conversationHistory,
       { role: 'user', content: userRequest },
     ];
 
-    const response = await ollama.chat({
-      model: MODEL,
-      messages,
-      stream: false,
-    });
+    const content = await chatWithGemini(messages, systemPrompt);
 
     res.json({
-      message: response.message.content,
+      message: content,
       role: 'assistant',
     });
   } catch (error) {
@@ -263,7 +274,7 @@ app.post('/api/planning/finalize', async (req, res) => {
 
     const systemPrompt = `Based on the planning conversation, extract the final agreed-upon daily schedule.
 
-Return ONLY a JSON array with the following structure (no other text):
+Return ONLY a JSON array with the following structure (no other text, no markdown code blocks):
 [
   {
     "time": "09:00",
@@ -277,24 +288,18 @@ Return ONLY a JSON array with the following structure (no other text):
 Order tasks by time. Include breaks if they were discussed.`;
 
     const messages = [
-      { role: 'system', content: systemPrompt },
       ...conversationHistory,
       {
         role: 'user',
-        content: 'Please extract the final daily schedule we agreed upon as a JSON array.',
+        content: 'Please extract the final daily schedule we agreed upon as a JSON array only, no other text.',
       },
     ];
 
-    const response = await ollama.chat({
-      model: MODEL,
-      messages,
-      stream: false,
-    });
+    const content = await chatWithGemini(messages, systemPrompt);
 
     // Try to parse the JSON response
     let schedule;
     try {
-      const content = response.message.content;
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         schedule = JSON.parse(jsonMatch[0]);
@@ -303,6 +308,7 @@ Order tasks by time. Include breaks if they were discussed.`;
       }
     } catch (parseError) {
       console.error('Failed to parse schedule:', parseError);
+      console.error('Raw response:', content);
       return res.status(500).json({ error: 'Failed to parse schedule from AI response' });
     }
 
@@ -316,8 +322,5 @@ Order tasks by time. Include breaks if they were discussed.`;
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`Using Ollama model: ${MODEL}`);
-  if (!process.env.OLLAMA_API_KEY || process.env.OLLAMA_API_KEY === 'your_api_key_here') {
-    console.warn('WARNING: OLLAMA_API_KEY not set. Please set it in your .env file.');
-  }
+  console.log(`Using Google AI (Gemini) with model: ${MODEL}`);
 });
