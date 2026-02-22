@@ -1,38 +1,62 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { planningApi } from '../services/api'
 
 const ChatSchedular = () => {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      type: 'bot',
-      text: "Good morning, Alex! Let's get your day organized. First, what time did you wake up today and when do you plan to start working?",
-      time: '9:00 AM'
-    }
-  ])
+  const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [scheduledTasks, setScheduledTasks] = useState([])
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [error, setError] = useState(null)
+  const [totalWorkHours, setTotalWorkHours] = useState(0)
+  const [focusBlocks, setFocusBlocks] = useState(0)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
 
-  const quickActions = [
-    '5 - Extremely Focused',
-    '3 - Moderate Energy',
-    '1 - Feeling Drained',
-    'Need a break first',
-  ]
+  // Sample goals - in a real app, these would come from a global state/context
+  const [goals] = useState([
+    {
+      id: 1,
+      title: 'Launch SaaS MVP',
+      progress: 45,
+      tasks: [
+        { id: 1, title: 'Finish UI Design Audit', done: false, priority: 'high' },
+        { id: 2, title: 'Implement user authentication', done: false, priority: 'high' },
+        { id: 3, title: 'Write API documentation', done: true, priority: 'medium' },
+      ]
+    },
+    {
+      id: 2,
+      title: 'Learn React Performance',
+      progress: 30,
+      tasks: [
+        { id: 4, title: 'React Performance Optimization', done: false, priority: 'medium' },
+        { id: 5, title: 'Study React.memo and useMemo', done: false, priority: 'low' },
+      ]
+    },
+    {
+      id: 3,
+      title: 'Team Management',
+      progress: 60,
+      tasks: [
+        { id: 6, title: 'Team Sync & Mail', done: false, priority: 'medium' },
+        { id: 7, title: 'Respond to stakeholder feedback', done: false, priority: 'high' },
+      ]
+    }
+  ])
 
-  const scheduledTasks = [
-    { time: '09:30', duration: '90m', title: 'Finish UI Design Audit', hasStart: true, color: 'indigo' },
-    { time: '11:15', duration: '45m', title: 'Team Sync & Mail', hasStart: false, color: 'purple' },
-    { time: '12:00', duration: '60m', title: 'Lunch & Quick Walk', hasStart: false, color: 'emerald' },
-    { time: '13:00', duration: '120m', title: 'React Performance Opt', hasStart: true, color: 'blue' },
+  const quickActions = [
+    "I want to focus on high priority tasks",
+    "Give me more time for deep work",
+    "I need a lighter schedule today",
+    "Add a longer lunch break",
+    "This looks good, finalize it"
   ]
 
   const taskIconColors = {
-    indigo: 'bg-indigo-100 text-indigo-600',
-    purple: 'bg-purple-100 text-purple-600',
-    emerald: 'bg-emerald-100 text-emerald-600',
-    blue: 'bg-blue-100 text-blue-600',
+    high: 'bg-red-100 text-red-600',
+    medium: 'bg-amber-100 text-amber-600',
+    low: 'bg-emerald-100 text-emerald-600',
   }
 
   const scrollToBottom = () => {
@@ -43,52 +67,138 @@ const ChatSchedular = () => {
     scrollToBottom()
   }, [messages, isTyping])
 
-  const getBotResponse = (userMessage) => {
-    const msg = userMessage.toLowerCase()
-    if (msg.includes('wake') || msg.includes('7:30') || msg.includes('start') || msg.includes('9:30')) {
-      return "Got it! Starting at 9:30 AM gives us a solid window. How is your energy level right now on a scale of 1 to 5?"
-    } else if (msg.includes('5') || msg.includes('focused') || msg.includes('extreme')) {
-      return "Great energy! 💪 I've front-loaded your hardest task 'UI Design Audit' at 9:30 AM. I've scheduled 4 tasks across 5.5 hours with 2 focus blocks. Check the schedule on the right!"
-    } else if (msg.includes('3') || msg.includes('moderate')) {
-      return "Moderate energy noted. I'll balance deep work and lighter tasks. Starting with a 45-min warm-up before your main focus block."
-    } else if (msg.includes('1') || msg.includes('drained')) {
-      return "I understand. Let me start you with lighter tasks and schedule your deep work block after lunch when energy typically rebounds."
-    } else if (msg.includes('break')) {
-      return "Sure! I'll add a 20-minute break first. Your first task will start at 9:50 AM. Take your time! ☕"
-    } else if (msg.includes('schedule') || msg.includes('task')) {
-      return "I've drafted a schedule based on your preferences. You can see the daily view on the right panel. Want me to adjust anything?"
-    } else if (msg.includes('hello') || msg.includes('hi') || msg.includes('hey')) {
-      return "Hello! 👋 Ready to plan your productive day? Tell me what time you'd like to start working."
-    } else {
-      return "Got it! I'll factor that into your schedule. Shall I finalize the daily plan, or would you like to make any adjustments?"
+  // Initialize chat with AI suggestions
+  useEffect(() => {
+    if (!isInitialized) {
+      initializeChat()
+    }
+  }, [isInitialized])
+
+  const initializeChat = async () => {
+    setIsTyping(true)
+    setError(null)
+
+    try {
+      const response = await planningApi.suggest({
+        goals,
+        existingTasks: [],
+        userPreferences: null,
+        conversationHistory: []
+      })
+
+      const initialMessages = [
+        {
+          role: 'assistant',
+          content: response.message
+        }
+      ]
+
+      setMessages(initialMessages)
+      setIsInitialized(true)
+    } catch (err) {
+      setError(err.message)
+      setMessages([
+        {
+          role: 'assistant',
+          content: `Good morning! I'd love to help you plan your day, but I'm having trouble connecting to the AI service. Please make sure the server is running.\n\nError: ${err.message}`
+        }
+      ])
+      setIsInitialized(true)
+    } finally {
+      setIsTyping(false)
     }
   }
 
-  const handleSend = (text) => {
+  const handleSend = async (text) => {
     const messageText = text || input.trim()
-    if (!messageText) return
+    if (!messageText || isTyping) return
 
-    const userMessage = {
-      id: messages.length + 1,
-      type: 'user',
-      text: messageText,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-
-    setMessages(prev => [...prev, userMessage])
+    const newMessages = [...messages, { role: 'user', content: messageText }]
+    setMessages(newMessages)
     setInput('')
     setIsTyping(true)
+    setError(null)
 
-    setTimeout(() => {
-      const botResponse = {
-        id: messages.length + 2,
-        type: 'bot',
-        text: getBotResponse(messageText),
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    try {
+      // Check if user wants to finalize
+      const isFinalize = messageText.toLowerCase().includes('finalize') || 
+                         messageText.toLowerCase().includes('looks good') ||
+                         messageText.toLowerCase().includes('confirm')
+
+      if (isFinalize && messages.length >= 2) {
+        // Try to extract the schedule
+        const response = await planningApi.finalize({ conversationHistory: newMessages })
+        
+        if (response.schedule && response.schedule.length > 0) {
+          setScheduledTasks(response.schedule)
+          calculateStats(response.schedule)
+          setMessages([
+            ...newMessages,
+            {
+              role: 'assistant',
+              content: "I've finalized your schedule for tomorrow. You can see all tasks in the Daily View panel on the right. Feel free to ask me to make any adjustments, or click 'Confirm & Sync to Calendar' when you're ready!"
+            }
+          ])
+        } else {
+          throw new Error('Could not extract schedule')
+        }
+      } else {
+        // Check if this is a tweak request
+        const isTweak = scheduledTasks.length > 0 && (
+          messageText.toLowerCase().includes('more time') ||
+          messageText.toLowerCase().includes('less time') ||
+          messageText.toLowerCase().includes('change') ||
+          messageText.toLowerCase().includes('move') ||
+          messageText.toLowerCase().includes('add') ||
+          messageText.toLowerCase().includes('remove') ||
+          messageText.toLowerCase().includes('adjust')
+        )
+
+        let response
+        if (isTweak) {
+          response = await planningApi.tweak({
+            currentPlan: scheduledTasks,
+            userRequest: messageText,
+            conversationHistory: newMessages.slice(-4) // Last few messages for context
+          })
+        } else {
+          response = await planningApi.suggest({
+            goals,
+            existingTasks: scheduledTasks,
+            userPreferences: messageText,
+            conversationHistory: newMessages
+          })
+        }
+
+        setMessages([...newMessages, { role: 'assistant', content: response.message }])
       }
-      setMessages(prev => [...prev, botResponse])
+    } catch (err) {
+      setError(err.message)
+      setMessages([
+        ...newMessages,
+        {
+          role: 'assistant',
+          content: `I encountered an issue: ${err.message}. Let me try to help you differently. What would you like to adjust in your schedule?`
+        }
+      ])
+    } finally {
       setIsTyping(false)
-    }, 1200)
+    }
+  }
+
+  const calculateStats = (tasks) => {
+    let totalMinutes = 0
+    let blocks = 0
+
+    tasks.forEach(task => {
+      const duration = task.duration || '60m'
+      const minutes = parseInt(duration) || 60
+      totalMinutes += minutes
+      if (minutes >= 60) blocks++
+    })
+
+    setTotalWorkHours((totalMinutes / 60).toFixed(1))
+    setFocusBlocks(blocks)
   }
 
   const handleKeyDown = (e) => {
@@ -98,6 +208,20 @@ const ChatSchedular = () => {
     }
   }
 
+  const formatDate = () => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return tomorrow.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+  }
+
+  const resetChat = () => {
+    setMessages([])
+    setScheduledTasks([])
+    setIsInitialized(false)
+    setTotalWorkHours(0)
+    setFocusBlocks(0)
+  }
+
   return (
     <div className="flex h-full">
       {/* Chat Area */}
@@ -105,39 +229,51 @@ const ChatSchedular = () => {
         {/* Chat Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between" role="banner">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-linear-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm shadow-indigo-200">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm shadow-indigo-200">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
             <div>
-              <h1 className="text-sm font-bold text-gray-900">LifeFlow Assistant</h1>
+              <h1 className="text-sm font-bold text-gray-900">Daily Planner AI</h1>
               <div className="flex items-center gap-1.5">
                 <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isTyping ? 'bg-amber-400' : 'bg-emerald-400'} opacity-75`}></span>
+                  <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${isTyping ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
                 </span>
                 <span className="text-[11px] text-gray-400">
-                  <span aria-hidden="true">✨</span> AI active and typing...
+                  {isTyping ? 'AI is thinking...' : 'Ready to plan your day'}
                 </span>
               </div>
             </div>
           </div>
-          <button className="p-2 hover:bg-gray-50 rounded-lg transition-colors" aria-label="Chat options">
+          <button 
+            onClick={resetChat}
+            className="p-2 hover:bg-gray-50 rounded-lg transition-colors" 
+            aria-label="Reset chat"
+            title="Start over"
+          >
             <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
         </div>
 
+        {/* Error Banner */}
+        {error && (
+          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+            <strong>Connection issue:</strong> {error}
+          </div>
+        )}
+
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5" role="log" aria-label="Chat messages" aria-live="polite">
-          {messages.map((message) => (
-            <div key={message.id}>
-              <div className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex gap-3 max-w-[75%] ${message.type === 'user' ? 'flex-row-reverse' : ''}`}>
-                  {message.type === 'bot' && (
-                    <div className="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200" aria-hidden="true">
+          {messages.map((message, index) => (
+            <div key={index}>
+              <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`flex gap-3 max-w-[75%] ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  {message.role === 'assistant' && (
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200" aria-hidden="true">
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
@@ -145,15 +281,12 @@ const ChatSchedular = () => {
                   )}
                   <div>
                     <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-line ${
-                      message.type === 'bot'
+                      message.role === 'assistant'
                         ? 'bg-gray-50 border border-gray-100 text-gray-700 rounded-tl-md'
-                        : 'bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-tr-md shadow-md shadow-indigo-200'
+                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-tr-md shadow-md shadow-indigo-200'
                     }`}>
-                      {message.text}
+                      {message.content}
                     </div>
-                    <p className={`text-[11px] text-gray-400 mt-1.5 ${message.type === 'user' ? 'text-right' : ''}`}>
-                      {message.time}
-                    </p>
                   </div>
                 </div>
               </div>
@@ -164,7 +297,7 @@ const ChatSchedular = () => {
           {isTyping && (
             <div className="flex justify-start" role="status" aria-label="AI is typing">
               <div className="flex gap-3 max-w-[75%]">
-                <div className="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200" aria-hidden="true">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200" aria-hidden="true">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
@@ -190,7 +323,8 @@ const ChatSchedular = () => {
               <button
                 key={i}
                 onClick={() => handleSend(action)}
-                className="px-4 py-2 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:border-indigo-200 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200"
+                disabled={isTyping}
+                className="px-4 py-2 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:border-indigo-200 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200 disabled:opacity-50"
               >
                 {action}
               </button>
@@ -207,23 +341,19 @@ const ChatSchedular = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type your reply..."
+                disabled={isTyping}
+                placeholder="Tell AI how you want to plan your day..."
                 aria-label="Chat message input"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all pr-10"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all disabled:opacity-50"
               />
-              <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-500 transition-colors" aria-label="Refresh suggestions">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
             </div>
             <button
               onClick={() => handleSend()}
-              disabled={!input.trim()}
+              disabled={!input.trim() || isTyping}
               aria-label="Send message"
               className={`p-3 rounded-xl transition-all duration-300 shrink-0 ${
-                input.trim()
-                  ? 'bg-linear-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
+                input.trim() && !isTyping
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
                   : 'bg-indigo-100 text-indigo-400 cursor-not-allowed'
               }`}
             >
@@ -232,19 +362,27 @@ const ChatSchedular = () => {
               </svg>
             </button>
           </div>
-          <p className="text-[11px] text-gray-400 mt-2 text-center">AI may suggest scheduling based on your energy levels.</p>
+          <p className="text-[11px] text-gray-400 mt-2 text-center">
+            Say things like "I want to spend 2 hours on the MVP" or "Move the meeting to afternoon"
+          </p>
         </div>
       </div>
 
       {/* Right Panel - Daily View */}
-      <aside className="w-72 bg-white px-5 py-5 overflow-y-auto shrink-0 flex flex-col lg:flex" aria-label="Daily schedule">
+      <aside className="w-80 bg-white px-5 py-5 overflow-y-auto shrink-0 flex flex-col" aria-label="Daily schedule">
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Daily View</h2>
-            <p className="text-xs text-gray-400">Monday, Oct 24th</p>
+            <h2 className="text-lg font-bold text-gray-900">Tomorrow's Plan</h2>
+            <p className="text-xs text-gray-400">{formatDate()}</p>
           </div>
-          <span className="px-3 py-1 bg-gray-100 rounded-lg text-[11px] font-semibold text-gray-600">Drafting Mode</span>
+          <span className={`px-3 py-1 rounded-lg text-[11px] font-semibold ${
+            scheduledTasks.length > 0 
+              ? 'bg-emerald-100 text-emerald-700' 
+              : 'bg-gray-100 text-gray-600'
+          }`}>
+            {scheduledTasks.length > 0 ? 'Ready' : 'Drafting'}
+          </span>
         </div>
 
         {/* Stats */}
@@ -255,7 +393,7 @@ const ChatSchedular = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <p className="text-xl font-extrabold text-gray-900">5.5h</p>
+            <p className="text-xl font-extrabold text-gray-900">{totalWorkHours || '--'}h</p>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Work Hours</p>
           </div>
           <div className="bg-gray-50 border border-gray-100 rounded-xl p-3.5 text-center">
@@ -264,74 +402,92 @@ const ChatSchedular = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <p className="text-xl font-extrabold text-gray-900">2</p>
+            <p className="text-xl font-extrabold text-gray-900">{focusBlocks || '--'}</p>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Focus Blocks</p>
           </div>
         </div>
 
         {/* Scheduled Tasks */}
-        <div className="mb-6">
+        <div className="mb-6 flex-1">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Scheduled Tasks</h3>
-            <button className="text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors">+ Manual Add</button>
+            <span className="text-xs text-gray-400">{scheduledTasks.length} tasks</span>
           </div>
-          <ul className="space-y-3" role="list">
-            {scheduledTasks.map((task, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <div className={`w-8 h-8 ${taskIconColors[task.color]} rounded-lg flex items-center justify-center shrink-0 mt-0.5`}>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-gray-500">{task.time}</span>
+          
+          {scheduledTasks.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+              <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <p className="text-sm text-gray-500 mb-1">No schedule yet</p>
+              <p className="text-xs text-gray-400">Chat with AI to plan your day</p>
+            </div>
+          ) : (
+            <ul className="space-y-3" role="list">
+              {scheduledTasks.map((task, i) => (
+                <li key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
+                  <div className={`w-8 h-8 ${taskIconColors[task.priority] || 'bg-indigo-100 text-indigo-600'} rounded-lg flex items-center justify-center shrink-0 mt-0.5`}>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
-                  <p className="text-sm font-medium text-gray-800 truncate">{task.title}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-gray-500">{task.time}</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                        task.priority === 'high' ? 'bg-red-100 text-red-600' :
+                        task.priority === 'medium' ? 'bg-amber-100 text-amber-600' :
+                        'bg-emerald-100 text-emerald-600'
+                      }`}>
+                        {task.priority || 'medium'}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-800 truncate">{task.title}</p>
                     <span className="text-[11px] text-gray-400">{task.duration}</span>
-                    {task.hasStart && (
-                      <button className="text-[11px] font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-0.5 transition-colors" aria-label={`Start ${task.title} now`}>
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                        Start Now
-                      </button>
-                    )}
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* AI Insight */}
-        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-6">
-          <div className="flex items-start gap-2.5">
-            <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center shrink-0">
-              <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-1">AI Insight</p>
-              <p className="text-xs text-indigo-600 leading-relaxed">
-                You're most productive between <strong>10:00 AM</strong> and <strong>12:00 PM</strong>. I've front-loaded your hardest task "UI Audit" there.
-              </p>
+        {scheduledTasks.length > 0 && (
+          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-6">
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-1">AI Insight</p>
+                <p className="text-xs text-indigo-600 leading-relaxed">
+                  I've prioritized high-impact tasks for your peak productivity hours. You can ask me to adjust timing or add breaks anytime.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Action Buttons */}
         <div className="mt-auto space-y-2">
-          <button className="w-full py-3 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2">
+          <button 
+            disabled={scheduledTasks.length === 0}
+            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             Confirm & Sync to Calendar
           </button>
-          <button className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors text-center">
-            Discard Draft
+          <button 
+            onClick={resetChat}
+            className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors text-center"
+          >
+            Start Over
           </button>
         </div>
       </aside>
