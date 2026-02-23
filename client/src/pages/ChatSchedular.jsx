@@ -165,7 +165,7 @@ const ChatSchedular = () => {
       if (isFinalize && messages.length >= 2) {
         // Try to extract the schedule (non-streaming JSON endpoint)
         const response = await planningApi.finalize({ conversationHistory: validHistory })
-        
+
         if (response.schedule && response.schedule.length > 0) {
           setScheduledTasks(response.schedule)
           calculateStats(response.schedule)
@@ -283,7 +283,7 @@ const ChatSchedular = () => {
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
       tomorrow.setHours(0, 0, 0, 0)
-      
+
       const tasksToSave = scheduledTasks.map(task => ({
         title: task.title,
         description: task.description || null,
@@ -294,7 +294,7 @@ const ChatSchedular = () => {
       }))
 
       await dailyPlanApi.saveDailyPlan(tomorrow.toISOString().split('T')[0], tasksToSave)
-      
+
       showSaveStatus('success', 'Daily plan saved! View it in Focus Mode tomorrow.')
     } catch (err) {
       console.error('Error saving daily plan:', err)
@@ -305,11 +305,11 @@ const ChatSchedular = () => {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full flex-col lg:flex-row">
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col border-r border-gray-100">
+      <div className="flex-1 flex flex-col border-b lg:border-b-0 lg:border-r border-gray-100 min-h-0">
         {/* Chat Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between" role="banner">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between" role="banner">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm shadow-indigo-200">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -331,23 +331,22 @@ const ChatSchedular = () => {
           </div>
           <div className="flex items-center gap-2">
             {/* Thinking Mode Toggle */}
-            <button 
+            <button
               onClick={() => setThinkingMode(!thinkingMode)}
               title={thinkingMode ? "Thinking mode ON - AI will reason deeply" : "Thinking mode OFF - Faster responses"}
-              className={`p-2 rounded-lg transition-all duration-300 flex items-center gap-1.5 ${
-                thinkingMode 
-                  ? 'bg-purple-100 text-purple-600 hover:bg-purple-200' 
+              className={`p-2 rounded-lg transition-all duration-300 flex items-center gap-1.5 ${thinkingMode
+                  ? 'bg-purple-100 text-purple-600 hover:bg-purple-200'
                   : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-              }`}
+                }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
               <span className="text-xs font-medium hidden sm:inline">{thinkingMode ? 'Deep' : 'Fast'}</span>
             </button>
-            <button 
+            <button
               onClick={resetChat}
-              className="p-2 hover:bg-gray-50 rounded-lg transition-colors" 
+              className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
               aria-label="Reset chat"
               title="Start over"
             >
@@ -402,11 +401,10 @@ const ChatSchedular = () => {
               <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`flex gap-3 max-w-[75%] ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
                   {(message.role === 'assistant' || message.role === 'error') && (
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm ${
-                      message.role === 'error'
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm ${message.role === 'error'
                         ? 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-200'
                         : 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-200'
-                    }`} aria-hidden="true">
+                      }`} aria-hidden="true">
                       {message.role === 'error' ? (
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -418,7 +416,7 @@ const ChatSchedular = () => {
                       )}
                     </div>
                   )}
-                   <div className="min-w-0">
+                  <div className="min-w-0">
                     {message.role === 'error' ? (
                       <div className="px-4 py-3 rounded-2xl rounded-tl-md bg-gradient-to-br from-red-50 to-rose-50 border border-red-200 shadow-sm">
                         <div className="flex items-start gap-2">
@@ -518,11 +516,10 @@ const ChatSchedular = () => {
               onClick={() => handleSend()}
               disabled={!input.trim() || isTyping}
               aria-label="Send message"
-              className={`p-3 rounded-xl transition-all duration-300 shrink-0 ${
-                input.trim() && !isTyping
+              className={`p-3 rounded-xl transition-all duration-300 shrink-0 ${input.trim() && !isTyping
                   ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
                   : 'bg-indigo-100 text-indigo-400 cursor-not-allowed'
-              }`}
+                }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -536,18 +533,17 @@ const ChatSchedular = () => {
       </div>
 
       {/* Right Panel - Daily View */}
-      <aside className="w-80 bg-white px-5 py-5 overflow-y-auto shrink-0 flex flex-col" aria-label="Daily schedule">
+      <aside className="w-full lg:w-80 bg-white px-4 sm:px-5 py-4 sm:py-5 overflow-y-auto shrink-0 flex flex-col lg:max-h-full" aria-label="Daily schedule">
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div>
             <h2 className="text-lg font-bold text-gray-900">Tomorrow's Plan</h2>
             <p className="text-xs text-gray-400">{formatDate()}</p>
           </div>
-          <span className={`px-3 py-1 rounded-lg text-[11px] font-semibold ${
-            scheduledTasks.length > 0 
-              ? 'bg-emerald-100 text-emerald-700' 
+          <span className={`px-3 py-1 rounded-lg text-[11px] font-semibold ${scheduledTasks.length > 0
+              ? 'bg-emerald-100 text-emerald-700'
               : 'bg-gray-100 text-gray-600'
-          }`}>
+            }`}>
             {scheduledTasks.length > 0 ? 'Ready' : 'Drafting'}
           </span>
         </div>
@@ -580,7 +576,7 @@ const ChatSchedular = () => {
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Scheduled Tasks</h3>
             <span className="text-xs text-gray-400">{scheduledTasks.length} tasks</span>
           </div>
-          
+
           {scheduledTasks.length === 0 ? (
             <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
               <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -643,11 +639,10 @@ const ChatSchedular = () => {
 
         {/* Save Status Toast */}
         {saveStatus && (
-          <div className={`p-3 rounded-xl text-sm font-medium flex items-center gap-2 ${
-            saveStatus.type === 'success'
+          <div className={`p-3 rounded-xl text-sm font-medium flex items-center gap-2 ${saveStatus.type === 'success'
               ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
               : 'bg-red-50 border border-red-200 text-red-700'
-          }`}>
+            }`}>
             {saveStatus.type === 'success' ? (
               <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -668,7 +663,7 @@ const ChatSchedular = () => {
 
         {/* Action Buttons */}
         <div className="mt-auto space-y-2">
-          <button 
+          <button
             onClick={handleConfirmAndSave}
             disabled={scheduledTasks.length === 0 || saving}
             className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
@@ -690,7 +685,7 @@ const ChatSchedular = () => {
               </>
             )}
           </button>
-          <button 
+          <button
             onClick={resetChat}
             className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors text-center"
           >

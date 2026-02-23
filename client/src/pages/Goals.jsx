@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useGoalStore } from '../store/goalStore'
 import AIChat from '../components/UI/AIChat'
 import { goalApi } from '../services/api'
@@ -31,7 +31,7 @@ const Goals = () => {
   // Checklist state
   const [expandedChecklist, setExpandedChecklist] = useState(null)
   const [newChecklistItem, setNewChecklistItem] = useState('')
-  
+
   // Zustand store
   const {
     goals,
@@ -56,10 +56,30 @@ const Goals = () => {
     clearError,
   } = useGoalStore()
 
+  const location = useLocation()
+
   // Fetch goals on mount
   useEffect(() => {
     fetchGoals()
   }, [fetchGoals])
+
+  // If a goalId is passed via URL query param (e.g. from Dashboard card click),
+  // auto-navigate into that goal's milestones view.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const goalId = params.get('goalId')
+    if (!goalId) return
+    // Wait until goals are loaded, then fetch & display the target goal
+    const openGoal = async () => {
+      try {
+        await fetchGoal(goalId)
+        setView('milestones')
+      } catch (e) {
+        // fallback: stay on goals view
+      }
+    }
+    openGoal()
+  }, [location.search]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle creating a new goal
   const handleCreateGoal = async () => {
@@ -129,7 +149,7 @@ const Goals = () => {
     }
     const newStatus = statusCycle[task.status] || 'PENDING'
     await toggleTaskStatus(taskId, newStatus)
-    
+
     if (selectedGoal) {
       await fetchGoal(selectedGoal.id)
     }
@@ -207,9 +227,9 @@ const Goals = () => {
       'EXPERT': 'I am an expert in this area. Be very concise and just give me the main milestones.'
     }
 
-    const userMessage = { 
-      role: 'user', 
-      content: `I want to achieve this goal: "${aiObjective}". ${proficiencyContext[aiProficiencyLevel]} Can you help me break it down into manageable milestones with specific checkpoints?` 
+    const userMessage = {
+      role: 'user',
+      content: `I want to achieve this goal: "${aiObjective}". ${proficiencyContext[aiProficiencyLevel]} Can you help me break it down into manageable milestones with specific checkpoints?`
     }
     setChatMessages([userMessage])
 
@@ -335,9 +355,9 @@ const Goals = () => {
   const tasks = selectedMilestone?.tasks || []
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full flex-col sm:flex-row">
       {/* Main Content */}
-      <div className={`flex-1 px-8 py-6 overflow-y-auto transition-all duration-300 ${showChat ? 'pr-4' : ''}`}>
+      <div className={`flex-1 px-4 sm:px-6 lg:px-8 py-5 sm:py-6 overflow-y-auto transition-all duration-300 ${showChat ? 'sm:pr-4' : ''}`}>
         {/* Back Link */}
         <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors mb-4">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -347,39 +367,41 @@ const Goals = () => {
         </Link>
 
         {/* Header */}
-        <div className="flex items-start justify-between mb-8 animate-fade-in">
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-6 sm:mb-8 animate-fade-in">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
               {view === 'goals' && 'Create New Goal'}
               {view === 'milestones' && selectedGoal?.title}
               {view === 'tasks' && selectedMilestone?.title}
             </h1>
-            <p className="text-gray-500">
+            <p className="text-sm text-gray-500">
               {view === 'goals' && 'Define your vision and break it down into actionable steps.'}
               {view === 'milestones' && 'Break down your goal into milestones.'}
               {view === 'tasks' && 'Add tasks to complete this milestone.'}
             </p>
           </div>
-          <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-5 py-3">
-            <div>
-              <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">AI Powered</p>
-              <p className="text-lg font-extrabold text-indigo-700">Goal Coach</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-4 py-2.5">
+              <div>
+                <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">AI Powered</p>
+                <p className="text-base sm:text-lg font-extrabold text-indigo-700">Goal Coach</p>
+              </div>
+              <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
             </div>
-            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-5 py-3">
-            <div>
-              <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Total Goals</p>
-              <p className="text-lg font-extrabold text-indigo-700">{goals.length}</p>
-            </div>
-            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-4 py-2.5">
+              <div>
+                <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Total Goals</p>
+                <p className="text-base sm:text-lg font-extrabold text-indigo-700">{goals.length}</p>
+              </div>
+              <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -509,7 +531,7 @@ const Goals = () => {
                 </div>
               </div>
               <p className="text-sm text-gray-400 mb-5">
-                {goals.length === 0 
+                {goals.length === 0
                   ? "Enter a goal above to get started."
                   : "Click on a goal to view and manage its milestones."}
               </p>
@@ -536,46 +558,47 @@ const Goals = () => {
                     const completedCheckpoints = allCheckpoints.filter(c => c.done).length
                     const goalProgress = totalCheckpoints > 0 ? Math.round((completedCheckpoints / totalCheckpoints) * 100) : 0
                     return (
-                    <li
-                      key={goal.id}
-                      onClick={() => handleSelectGoal(goal)}
-                      className="flex items-center gap-4 px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50 transition-all duration-200 cursor-pointer group"
-                    >
-                      <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-gray-800">{goal.title}</span>
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="text-xs text-gray-400">{goal.milestoneCount || 0} milestones</span>
-                          <div className="flex items-center gap-1">
-                            <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-indigo-500 rounded-full transition-all duration-300" 
-                                style={{ width: `${goalProgress}%` }}
-                              />
+                      <li
+                        key={goal.id}
+                        onClick={() => handleSelectGoal(goal)}
+                        className="flex items-center gap-4 px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50 transition-all duration-200 cursor-pointer group"
+                      >
+                        <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                          <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-sm font-medium text-gray-800">{goal.title}</span>
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className="text-xs text-gray-400">{goal.milestoneCount || 0} milestones</span>
+                            <div className="flex items-center gap-1">
+                              <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                                  style={{ width: `${goalProgress}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-gray-400">{goalProgress}%</span>
                             </div>
-                            <span className="text-xs text-gray-400">{goalProgress}%</span>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); deleteGoal(goal.id); }}
-                          className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all text-gray-400"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deleteGoal(goal.id); }}
+                            className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all text-gray-400"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                          <svg className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
-                        </button>
-                        <svg className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </li>
-                  )})}
+                        </div>
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </section>
@@ -634,7 +657,7 @@ const Goals = () => {
                 <span className="text-sm text-gray-400">{milestones.length} total</span>
               </div>
               <p className="text-sm text-gray-400 mb-5">
-                {milestones.length === 0 
+                {milestones.length === 0
                   ? "Add milestones to break down your goal."
                   : "Click on a milestone to view and manage its tasks."}
               </p>
@@ -660,118 +683,118 @@ const Goals = () => {
                     const hasChecklist = milestone.checklist && milestone.checklist.length > 0
                     const isComplete = hasChecklist && milestone.checklist.every(c => c.done)
                     return (
-                    <li
-                      key={milestone.id}
-                      className={`rounded-xl transition-all duration-200 group border ${isComplete ? 'bg-green-50/50 border-green-100 opacity-75' : 'bg-gray-50 border-gray-100'}`}
-                    >
-                      <div
-                        onClick={() => hasChecklist && setExpandedChecklist(isExpanded ? null : milestone.id)}
-                        className={`flex items-center gap-4 px-5 py-4 rounded-xl transition-all duration-200 ${hasChecklist ? 'cursor-pointer hover:bg-indigo-50' : ''}`}
+                      <li
+                        key={milestone.id}
+                        className={`rounded-xl transition-all duration-200 group border ${isComplete ? 'bg-green-50/50 border-green-100 opacity-75' : 'bg-gray-50 border-gray-100'}`}
                       >
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isComplete ? 'bg-green-100' : 'bg-blue-100'}`}>
-                          {isComplete ? (
-                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          ) : (
-                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-                            </svg>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <span className={`text-sm font-medium ${isComplete ? 'line-through text-gray-400' : 'text-gray-800'}`}>{milestone.title}</span>
-                           <div className="flex items-center gap-3 mt-1">
-                            <span className="text-xs text-gray-400">{milestone.checklist?.length || 0} checkpoints</span>
-                            <div className="flex items-center gap-1">
-                              <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                <div 
-                                  className={`h-full rounded-full transition-all duration-300 ${isComplete ? 'bg-green-500' : 'bg-blue-500'}`}
-                                  style={{ width: `${milestone.checklist?.length ? Math.round((milestone.checklist.filter(c => c.done).length / milestone.checklist.length) * 100) : 0}%` }}
-                                />
+                        <div
+                          onClick={() => hasChecklist && setExpandedChecklist(isExpanded ? null : milestone.id)}
+                          className={`flex items-center gap-4 px-5 py-4 rounded-xl transition-all duration-200 ${hasChecklist ? 'cursor-pointer hover:bg-indigo-50' : ''}`}
+                        >
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isComplete ? 'bg-green-100' : 'bg-blue-100'}`}>
+                            {isComplete ? (
+                              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <span className={`text-sm font-medium ${isComplete ? 'line-through text-gray-400' : 'text-gray-800'}`}>{milestone.title}</span>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className="text-xs text-gray-400">{milestone.checklist?.length || 0} checkpoints</span>
+                              <div className="flex items-center gap-1">
+                                <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all duration-300 ${isComplete ? 'bg-green-500' : 'bg-blue-500'}`}
+                                    style={{ width: `${milestone.checklist?.length ? Math.round((milestone.checklist.filter(c => c.done).length / milestone.checklist.length) * 100) : 0}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-gray-400">{milestone.checklist?.length ? Math.round((milestone.checklist.filter(c => c.done).length / milestone.checklist.length) * 100) : 0}%</span>
                               </div>
-                              <span className="text-xs text-gray-400">{milestone.checklist?.length ? Math.round((milestone.checklist.filter(c => c.done).length / milestone.checklist.length) * 100) : 0}%</span>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {hasChecklist && (
-                            <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          )}
-                          <button
-                            onClick={(e) => { e.stopPropagation(); deleteMilestone(milestone.id); fetchGoal(selectedGoal.id); }}
-                            className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all text-gray-400"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                      {/* Accordion checklist panel */}
-                      {isExpanded && (
-                        <div className="px-5 pb-4 border-t border-gray-100">
-                          {/* Add checklist item */}
-                          <div className="flex gap-2 mt-3 mb-3">
-                            <input
-                              type="text"
-                              value={newChecklistItem}
-                              onChange={(e) => setNewChecklistItem(e.target.value)}
-                              onKeyDown={(e) => e.key === 'Enter' && handleAddChecklistItem(milestone.id)}
-                              onClick={(e) => e.stopPropagation()}
-                              placeholder="Add a checklist item..."
-                              className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
-                            />
+                          <div className="flex items-center gap-2">
+                            {hasChecklist && (
+                              <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            )}
                             <button
-                              onClick={(e) => { e.stopPropagation(); handleAddChecklistItem(milestone.id); }}
-                              disabled={!newChecklistItem.trim()}
-                              className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                              onClick={(e) => { e.stopPropagation(); deleteMilestone(milestone.id); fetchGoal(selectedGoal.id); }}
+                              className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all text-gray-400"
                             >
-                              Add
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
                             </button>
                           </div>
-                          {/* Checklist items */}
-                          {hasChecklist ? (
-                            <ul className="space-y-2">
-                              {milestone.checklist.map((item, idx) => (
-                                <li key={idx} className="flex items-center gap-3 px-3 py-2 bg-white rounded-lg group/item">
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleToggleChecklistItem(milestone.id, idx); }}
-                                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                                      item.done
+                        </div>
+                        {/* Accordion checklist panel */}
+                        {isExpanded && (
+                          <div className="px-5 pb-4 border-t border-gray-100">
+                            {/* Add checklist item */}
+                            <div className="flex gap-2 mt-3 mb-3">
+                              <input
+                                type="text"
+                                value={newChecklistItem}
+                                onChange={(e) => setNewChecklistItem(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleAddChecklistItem(milestone.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                placeholder="Add a checklist item..."
+                                className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                              />
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleAddChecklistItem(milestone.id); }}
+                                disabled={!newChecklistItem.trim()}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                              >
+                                Add
+                              </button>
+                            </div>
+                            {/* Checklist items */}
+                            {hasChecklist ? (
+                              <ul className="space-y-2">
+                                {milestone.checklist.map((item, idx) => (
+                                  <li key={idx} className="flex items-center gap-3 px-3 py-2 bg-white rounded-lg group/item">
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleToggleChecklistItem(milestone.id, idx); }}
+                                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${item.done
                                         ? 'bg-indigo-600 border-indigo-600'
                                         : 'border-gray-300 hover:border-indigo-400'
-                                    }`}
-                                  >
-                                    {item.done && (
-                                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        }`}
+                                    >
+                                      {item.done && (
+                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      )}
+                                    </button>
+                                    <span className={`flex-1 text-sm ${item.done ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                                      {item.text}
+                                    </span>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleDeleteChecklistItem(milestone.id, idx); }}
+                                      className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-red-50 hover:text-red-500 rounded transition-all"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                       </svg>
-                                    )}
-                                  </button>
-                                  <span className={`flex-1 text-sm ${item.done ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                                    {item.text}
-                                  </span>
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteChecklistItem(milestone.id, idx); }}
-                                    className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-red-50 hover:text-red-500 rounded transition-all"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="text-sm text-gray-400 text-center py-3">No checklist items yet</p>
-                          )}
-                        </div>
-                      )}
-                    </li>
-                  )})}
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-sm text-gray-400 text-center py-3">No checklist items yet</p>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </section>
@@ -830,7 +853,7 @@ const Goals = () => {
                 <span className="text-sm text-gray-400">{tasks.length} total</span>
               </div>
               <p className="text-sm text-gray-400 mb-5">
-                {tasks.length === 0 
+                {tasks.length === 0
                   ? "Add tasks to complete this milestone."
                   : "Click the checkbox to cycle through task status: Pending -> In Progress -> Completed."}
               </p>
@@ -850,19 +873,17 @@ const Goals = () => {
                   {tasks.map((task) => (
                     <li
                       key={task.id}
-                      className={`flex items-center gap-4 px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-gray-200 transition-all duration-200 group ${
-                        task.status === 'COMPLETED' ? 'opacity-60' : ''
-                      }`}
+                      className={`flex items-center gap-4 px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-gray-200 transition-all duration-200 group ${task.status === 'COMPLETED' ? 'opacity-60' : ''
+                        }`}
                     >
                       <button
                         onClick={() => handleToggleTask(task.id)}
-                        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-200 shrink-0 ${
-                          task.status === 'COMPLETED'
-                            ? 'bg-emerald-500 border-emerald-500'
-                            : task.status === 'IN_PROGRESS'
+                        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-200 shrink-0 ${task.status === 'COMPLETED'
+                          ? 'bg-emerald-500 border-emerald-500'
+                          : task.status === 'IN_PROGRESS'
                             ? 'bg-amber-100 border-amber-400'
                             : 'border-gray-300 hover:border-indigo-400'
-                        }`}
+                          }`}
                       >
                         {task.status === 'COMPLETED' && (
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -942,11 +963,10 @@ const Goals = () => {
               <button
                 onClick={() => setThinkingMode(!thinkingMode)}
                 title={thinkingMode ? "Thinking mode ON - AI will reason deeply" : "Thinking mode OFF - Faster responses"}
-                className={`p-1.5 rounded-lg transition-all duration-300 flex items-center gap-1 ${
-                  thinkingMode 
-                    ? 'bg-purple-100 text-purple-600 hover:bg-purple-200' 
-                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                }`}
+                className={`p-1.5 rounded-lg transition-all duration-300 flex items-center gap-1 ${thinkingMode
+                  ? 'bg-purple-100 text-purple-600 hover:bg-purple-200'
+                  : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                  }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />

@@ -1,348 +1,549 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
+// ─── per-range datasets ─────────────────────────────────────────────────────
+const rangeData = {
+  daily: {
+    labels: ['6am', '8am', '10am', '12pm', '2pm', '4pm', '6pm'],
+    current: [2, 5, 9, 7, 6, 4, 1],
+    previous: [1, 3, 6, 5, 4, 3, 2],
+    maxVal: 12,
+    peakLabel: '10 AM',
+    peakValue: 9,
+    productivity: 74, prodTrend: '+3%',
+    credibility: 89, credTrend: '+1.1%',
+    burnout: 'Low', burnoutColor: 'emerald',
+    effort: [
+      { label: 'Work', pct: 50, prev: 48, color: 'bg-indigo-500', text: 'text-indigo-600' },
+      { label: 'Learning', pct: 22, prev: 24, color: 'bg-violet-400', text: 'text-violet-600' },
+      { label: 'Health', pct: 18, prev: 16, color: 'bg-emerald-400', text: 'text-emerald-600' },
+      { label: 'Social', pct: 10, prev: 12, color: 'bg-amber-400', text: 'text-amber-600' },
+    ],
+    bottomStats: [
+      { icon: '⏱️', label: 'Focus Time', value: '4.2h' },
+      { icon: '✅', label: 'Tasks Done', value: '18' },
+      { icon: '🔥', label: 'Streak', value: '7 days' },
+      { icon: '🎯', label: 'Goals Met', value: '2 / 3' },
+    ],
+    updated: 'Today · 5:08 AM',
+  },
+  weekly: {
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    current: [10, 14, 18, 26, 20, 14, 8],
+    previous: [8, 12, 15, 14, 16, 12, 10],
+    maxVal: 28,
+    peakLabel: 'Thursday',
+    peakValue: 26,
+    productivity: 88, prodTrend: '+8%',
+    credibility: 94, credTrend: '+2.4%',
+    burnout: 'Medium', burnoutColor: 'amber',
+    effort: [
+      { label: 'Work', pct: 45, prev: 41, color: 'bg-indigo-500', text: 'text-indigo-600' },
+      { label: 'Learning', pct: 25, prev: 28, color: 'bg-violet-400', text: 'text-violet-600' },
+      { label: 'Health', pct: 20, prev: 18, color: 'bg-emerald-400', text: 'text-emerald-600' },
+      { label: 'Social', pct: 10, prev: 13, color: 'bg-amber-400', text: 'text-amber-600' },
+    ],
+    bottomStats: [
+      { icon: '⏱️', label: 'Focus Time', value: '32.5h' },
+      { icon: '✅', label: 'Tasks Done', value: '142' },
+      { icon: '🔥', label: 'Avg Streak', value: '8 days' },
+      { icon: '🎯', label: 'Goals Met', value: '4 / 5' },
+    ],
+    updated: 'Mon, 24 Feb 2026 · 5:08 AM',
+  },
+  monthly: {
+    labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'],
+    current: [68, 82, 91, 88],
+    previous: [55, 70, 78, 80],
+    maxVal: 100,
+    peakLabel: 'Week 3',
+    peakValue: 91,
+    productivity: 91, prodTrend: '+14%',
+    credibility: 96, credTrend: '+4.1%',
+    burnout: 'High', burnoutColor: 'rose',
+    effort: [
+      { label: 'Work', pct: 42, prev: 39, color: 'bg-indigo-500', text: 'text-indigo-600' },
+      { label: 'Learning', pct: 30, prev: 26, color: 'bg-violet-400', text: 'text-violet-600' },
+      { label: 'Health', pct: 17, prev: 21, color: 'bg-emerald-400', text: 'text-emerald-600' },
+      { label: 'Social', pct: 11, prev: 14, color: 'bg-amber-400', text: 'text-amber-600' },
+    ],
+    bottomStats: [
+      { icon: '⏱️', label: 'Focus Time', value: '128h' },
+      { icon: '✅', label: 'Tasks Done', value: '534' },
+      { icon: '🔥', label: 'Best Streak', value: '21 days' },
+      { icon: '🎯', label: 'Goals Met', value: '9 / 11' },
+    ],
+    updated: 'Feb 2026 — full month',
+  },
+}
+
+// ─── static data (unchanged) ─────────────────────────────────────────────────
+const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const thisWeek = [10, 14, 18, 26, 20, 14, 8]   // Thu is peak
+const lastWeek = [8, 12, 15, 14, 16, 12, 10]
+const maxVal = 28
+const peakIndex = thisWeek.indexOf(Math.max(...thisWeek))   // 3 → Thu
+
+const effortData = [
+  { label: 'Work', pct: 45, prev: 41, color: 'bg-indigo-500', text: 'text-indigo-600' },
+  { label: 'Learning', pct: 25, prev: 28, color: 'bg-violet-400', text: 'text-violet-600' },
+  { label: 'Health', pct: 20, prev: 18, color: 'bg-emerald-400', text: 'text-emerald-600' },
+  { label: 'Social', pct: 10, prev: 13, color: 'bg-amber-400', text: 'text-amber-600' },
+]
+
+const aiInsights = [
+  {
+    id: 'peak',
+    accent: 'border-indigo-400 bg-indigo-50',
+    iconBg: 'bg-indigo-100',
+    iconColor: 'text-indigo-600',
+    tagColor: 'bg-indigo-100 text-indigo-700',
+    tag: 'Optimization',
+    title: 'Peak Focus Optimization',
+    desc: 'Your performance peaks between 9 AM and 11 AM. Move your "Main Goal" deep work sessions to this window for a 24% higher output.',
+    cta: 'Apply to Schedule',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+    full: true,
+  },
+  {
+    id: 'burnout',
+    accent: 'border-amber-400 bg-amber-50',
+    iconBg: 'bg-amber-100',
+    iconColor: 'text-amber-600',
+    tagColor: 'bg-amber-100 text-amber-700',
+    tag: 'Burnout Warning',
+    title: 'Burnout Prevention',
+    desc: 'Focus streaks exceeding 3 hours are causing a drop in your Credibility Score later in the day.',
+    cta: 'View Breaks',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'goal',
+    accent: 'border-emerald-400 bg-emerald-50',
+    iconBg: 'bg-emerald-100',
+    iconColor: 'text-emerald-600',
+    tagColor: 'bg-emerald-100 text-emerald-700',
+    tag: 'Goal Alignment',
+    title: 'Goal Alignment Strong',
+    desc: "You're hitting 92% of work subtasks. Consider increasing goal difficulty by 10%.",
+    cta: 'Adjust Goals',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'efficiency',
+    accent: 'border-purple-400 bg-purple-50',
+    iconBg: 'bg-purple-100',
+    iconColor: 'text-purple-600',
+    tagColor: 'bg-purple-100 text-purple-700',
+    tag: 'Efficiency',
+    title: 'Learning Takes Longer',
+    desc: 'Tasks tagged "Learning" run 15% over estimate. Try breaking them into 25-min chunks.',
+    cta: 'Restructure Tasks',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+      </svg>
+    ),
+  },
+]
+
+// SVG constants — W/H fixed; px/py computed per-render inside component
+const W = 560; const H = 140
+
+// ─── TrendArrow ───────────────────────────────────────────────────────────────
+function TrendArrow({ delta }) {
+  if (delta === 0) return null
+  return delta > 0 ? (
+    <span className="inline-flex items-center gap-0.5 text-emerald-600 font-semibold text-xs">
+      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" /></svg>
+      +{delta}%
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-0.5 text-rose-500 font-semibold text-xs">
+      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
+      {delta}%
+    </span>
+  )
+}
+
+// ─── Analytics ────────────────────────────────────────────────────────────────
 const Analytics = () => {
-  const [activeRange, setActiveRange] = useState('weekly')
-
+  const navigate = useNavigate()
+  const [range, setRange] = useState('weekly')
   const ranges = ['daily', 'weekly', 'monthly']
 
-  const scoreCards = [
-    {
-      label: 'PRODUCTIVITY SCORE',
-      value: '88',
-      change: '+8%',
-      positive: true,
-      desc: 'Based on task complexity and completion speed',
-      icon: (
-        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      ),
-      iconBg: 'bg-indigo-100',
-    },
-    {
-      label: 'CREDIBILITY SCORE',
-      value: '94%',
-      change: '+2.4%',
-      positive: true,
-      desc: 'Measures how often you complete planned tasks',
-      icon: (
-        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      iconBg: 'bg-purple-100',
-    },
-    {
-      label: 'BURNOUT RISK',
-      value: 'Medium',
-      change: '~12%',
-      positive: false,
-      desc: 'High intensity detected in evening blocks',
-      icon: (
-        <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-        </svg>
-      ),
-      iconBg: 'bg-amber-100',
-    },
-  ]
+  const d = rangeData[range]
+  const n = d.labels.length
+  const px = (i) => n > 1 ? (i / (n - 1)) * W : W / 2
+  const py = (v) => H - (v / d.maxVal) * H
+  const peakIndex = d.current.indexOf(Math.max(...d.current))
 
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  const thisWeek = [10, 14, 18, 22, 20, 14, 8]
-  const lastWeek = [8, 12, 15, 14, 16, 12, 10]
-  const maxVal = 28
+  const thisPoints = d.current.map((v, i) => `${px(i)},${py(v)}`).join(' ')
+  const lastPoints = d.previous.map((v, i) => `${px(i)},${py(v)}`).join(' ')
+  const areaPath = `M${px(0)},${py(d.current[0])} ${d.current.map((v, i) => `L${px(i)},${py(v)}`).join(' ')} L${px(n - 1)},${H} L${px(0)},${H} Z`
 
-  const effortData = [
-    { label: 'Work', pct: 45, color: 'bg-indigo-500' },
-    { label: 'Health', pct: 20, color: 'bg-indigo-400' },
-    { label: 'Learning', pct: 25, color: 'bg-indigo-500' },
-    { label: 'Social', pct: 10, color: 'bg-indigo-300' },
-  ]
+  const heroInsight = aiInsights.find(a => a.full)
+  const subInsights = aiInsights.filter(a => !a.full)
 
-  const effortLegend = [
-    { label: 'Work', pct: '45%', color: 'bg-indigo-600' },
-    { label: 'Health', pct: '20%', color: 'bg-orange-400' },
-    { label: 'Learning', pct: '25%', color: 'bg-purple-500' },
-    { label: 'Social', pct: '10%', color: 'bg-rose-400' },
-  ]
-
-  const aiInsights = [
-    {
-      icon: (
-        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      ),
-      iconBg: 'bg-indigo-100',
-      title: 'Peak Focus Optimization',
-      desc: 'Your performance peaks between 9 AM and 11 AM. Move your "Main Goal" deep work sessions to this window for 24% higher output.',
-    },
-    {
-      icon: (
-        <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-        </svg>
-      ),
-      iconBg: 'bg-red-100',
-      title: 'Burnout Prevention',
-      desc: 'Focus streaks exceeding 3 hours are causing a drop in "Credibility Score" later in the day. Implement mandatory 10-min breaks.',
-    },
-    {
-      icon: (
-        <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      iconBg: 'bg-emerald-100',
-      title: 'Goal Alignment Strong',
-      desc: 'You are currently hitting 92% of work-related subtasks. Consider increasing the difficulty of your "Work" goals by 10%.',
-    },
-    {
-      icon: (
-        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-        </svg>
-      ),
-      iconBg: 'bg-purple-100',
-      title: 'Efficiency Insight',
-      desc: 'Tasks tagged with "Learning" are taking 15% longer than estimated. AI suggests breaking these into smaller chunks.',
-    },
-  ]
-
-  const bottomStats = [
-    { icon: '⏱️', label: 'FOCUS TIME', value: '32.5h' },
-    { icon: '✅', label: 'TASKS DONE', value: '142' },
-    { icon: '🔥', label: 'AVG. STREAK', value: '8 days' },
-    { icon: '🎯', label: 'GOALS MET', value: '4/5' },
-  ]
+  const burnoutPill = {
+    Low: { pill: 'bg-emerald-100 text-emerald-700', border: 'border-l-emerald-400', bg: 'bg-white', label: 'Low Risk', num: 'text-emerald-700' },
+    Medium: { pill: 'bg-amber-200   text-amber-800', border: 'border-l-amber-400', bg: 'bg-amber-50', label: 'Medium Risk', num: 'text-amber-700' },
+    High: { pill: 'bg-red-100    text-red-700', border: 'border-l-red-400', bg: 'bg-red-50', label: 'High Risk', num: 'text-red-700' },
+  }
+  const bs = burnoutPill[d.burnout] ?? burnoutPill.Medium
 
   return (
-    <div className="px-8 py-6 overflow-y-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6 animate-fade-in">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Performance Analytics</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Deep insights into your productivity, focus, and well-being.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex bg-gray-100 rounded-lg p-0.5" role="tablist" aria-label="Time range">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 overflow-y-auto bg-gray-50 min-h-full">
+      <div className="max-w-5xl mx-auto space-y-6">
+
+        {/* ── Page title + toggle ─────────────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Performance Analytics</h1>
+            <p className="text-sm text-gray-400 mt-1">Deep insights into your productivity, focus, and well-being.</p>
+          </div>
+
+          {/* Pill toggle */}
+          <div className="flex items-center self-start sm:self-auto bg-white border border-gray-200 rounded-xl p-1 shadow-sm" role="tablist" aria-label="Time range">
             {ranges.map(r => (
               <button
                 key={r}
-                onClick={() => setActiveRange(r)}
+                onClick={() => setRange(r)}
                 role="tab"
-                aria-selected={activeRange === r}
-                className={`px-3.5 py-1.5 rounded-md text-xs font-semibold capitalize transition-all duration-200 ${
-                  activeRange === r
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
+                aria-selected={range === r}
+                className={`px-4 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all duration-200 ${range === r ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-700'
+                  }`}
               >
                 {r}
               </button>
             ))}
           </div>
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600" aria-label="Filter results">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-          </button>
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600" aria-label="Export report">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          </button>
         </div>
-      </div>
 
-      {/* Score Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {scoreCards.map((card, i) => (
-          <article key={i} className="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md hover:border-gray-200 transition-all duration-300">
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-10 h-10 ${card.iconBg} rounded-xl flex items-center justify-center`}>
-                {card.icon}
-              </div>
-              <div className="flex items-center gap-1">
-                <svg className={`w-3.5 h-3.5 ${card.positive ? 'text-emerald-500' : 'text-red-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={card.positive ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"} />
+        {/* ── Stat cards ──────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+          {/* Hero — Productivity Score */}
+          <article className="sm:col-span-1 bg-white rounded-2xl border border-gray-100 border-l-4 border-l-indigo-500 p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                <span className={`text-xs font-semibold ${card.positive ? 'text-emerald-500' : 'text-red-400'}`}>{card.change}</span>
               </div>
+              <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" /></svg>
+                {d.prodTrend} vs prev
+              </span>
             </div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{card.label}</p>
-            <p className="text-3xl font-extrabold text-gray-900 mb-2">{card.value}</p>
-            <p className="text-[11px] text-gray-400 flex items-center gap-1">
-              <span aria-hidden="true">ⓘ</span> {card.desc}
-            </p>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Productivity Score</p>
+            <p className="text-5xl font-extrabold text-gray-900 leading-none mb-2">{d.productivity}</p>
+            <p className="text-xs text-gray-400">Based on task complexity &amp; completion speed</p>
           </article>
-        ))}
-      </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        {/* Activity Trends - takes 2 cols */}
-        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-1">
+          {/* Secondary — Credibility Score */}
+          <article className="bg-white rounded-2xl border border-gray-100 border-l-4 border-l-purple-400 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center">
+                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" /></svg>
+                {d.credTrend}
+              </span>
+            </div>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Credibility Score</p>
+            <p className="text-4xl font-extrabold text-gray-900 leading-none mb-2">{d.credibility}%</p>
+            <p className="text-xs text-gray-400">How often you complete planned tasks</p>
+          </article>
+
+          {/* Burnout Risk — dynamic */}
+          <article className={`rounded-2xl border border-gray-100 border-l-4 ${bs.border} ${bs.bg} p-5 shadow-sm hover:shadow-md transition-shadow`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center">
+                <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${bs.pill}`}>{bs.label}</span>
+            </div>
+            <p className="text-[11px] font-bold text-amber-600 uppercase tracking-wider mb-1">Burnout Risk</p>
+            <p className={`text-4xl font-extrabold leading-none mb-2 ${bs.num}`}>{d.burnout}</p>
+            <p className="text-xs text-amber-600">High intensity detected in evening blocks</p>
+          </article>
+        </div>
+
+        {/* ── Activity Trends chart ──────────────────────────────────────── */}
+        <section className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm" aria-labelledby="chart-heading">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
             <div>
-              <h2 className="text-base font-bold text-gray-900">Activity Trends</h2>
-              <p className="text-xs text-gray-400">Completed tasks vs. Previous period</p>
+              <h2 id="chart-heading" className="text-base font-bold text-gray-900">Activity Trends</h2>
+              <p className="text-xs text-gray-400">Completed tasks vs. previous period</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full" aria-hidden="true"></span>
+                <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full" aria-hidden="true" />
                 <span className="text-xs text-gray-500">This Week</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 bg-gray-300 rounded-full" aria-hidden="true"></span>
+                <span className="w-2.5 h-2.5 bg-gray-300 rounded-full" aria-hidden="true" />
                 <span className="text-xs text-gray-500">Last Week</span>
               </div>
             </div>
           </div>
 
-          {/* Chart */}
-          <div className="mt-4 relative h-48" role="img" aria-label="Activity trends chart showing completed tasks this week versus last week. Thursday had the most tasks completed this week with 22.">
-            {/* Y axis labels */}
-            <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[11px] text-gray-400 w-8" aria-hidden="true">
-              <span>28</span>
-              <span>21</span>
-              <span>14</span>
-              <span>7</span>
-              <span>0</span>
-            </div>
-            {/* Grid and chart area */}
-            <div className="ml-10 h-full relative">
-              {/* Horizontal grid lines */}
-              {[0, 1, 2, 3, 4].map(i => (
-                <div key={i} className="absolute left-0 right-0 border-t border-gray-100" style={{ top: `${(i / 4) * 100}%` }} aria-hidden="true"></div>
+          {/* SVG chart — fixed viewBox, never stretches */}
+          <div
+            className="relative"
+            role="img"
+            aria-label={`Activity trends chart. Peak day: Thursday with ${thisWeek[peakIndex]} tasks.`}
+          >
+            <svg
+              viewBox={`0 0 ${W + 8} ${H + 24}`}
+              className="w-full"
+              style={{ maxHeight: '180px' }}
+              preserveAspectRatio="xMidYMid meet"
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6366f1" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#6366f1" stopOpacity="0.01" />
+                </linearGradient>
+              </defs>
+
+              {/* Grid lines */}
+              {[0, 0.25, 0.5, 0.75, 1].map((t, i) => (
+                <line key={i} x1="0" y1={H * t} x2={W} y2={H * t} stroke="#f3f4f6" strokeWidth="1" />
               ))}
-              {/* SVG chart */}
-              <svg className="w-full h-full" viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden="true">
-                {/* Area fill for this week */}
-                <defs>
-                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6366f1" stopOpacity="0.15" />
-                    <stop offset="100%" stopColor="#6366f1" stopOpacity="0.01" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d={`M0,${180 - (thisWeek[0] / maxVal) * 170} ${thisWeek.map((v, i) => `L${(i / 6) * 600},${180 - (v / maxVal) * 170}`).join(' ')} L600,180 L0,180 Z`}
-                  fill="url(#areaGrad)"
+
+              {/* Area fill */}
+              <path d={areaPath} fill="url(#areaGrad)" />
+
+              {/* Last week dashed */}
+              <polyline
+                points={lastPoints}
+                fill="none"
+                stroke="#d1d5db"
+                strokeWidth="1.8"
+                strokeDasharray="5,4"
+                strokeLinejoin="round"
+              />
+
+              {/* This week line */}
+              <polyline
+                points={thisPoints}
+                fill="none"
+                stroke="#6366f1"
+                strokeWidth="2.5"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+
+              {/* Dots */}
+              {d.current.map((v, i) => (
+                <circle
+                  key={i}
+                  cx={px(i)} cy={py(v)} r="3.5"
+                  fill={i === peakIndex ? '#4f46e5' : '#6366f1'}
+                  stroke="white"
+                  strokeWidth={i === peakIndex ? '2.5' : '1.5'}
                 />
-                {/* This week line */}
-                <polyline
-                  points={thisWeek.map((v, i) => `${(i / 6) * 600},${180 - (v / maxVal) * 170}`).join(' ')}
-                  fill="none"
-                  stroke="#6366f1"
-                  strokeWidth="2.5"
-                  strokeLinejoin="round"
+              ))}
+
+              {/* Peak annotation */}
+              <g>
+                <rect
+                  x={px(peakIndex) - 52}
+                  y={py(d.current[peakIndex]) - 28}
+                  width={104} height={20}
+                  rx="5"
+                  fill="#4f46e5"
                 />
-                {/* Last week dashed line */}
-                <polyline
-                  points={lastWeek.map((v, i) => `${(i / 6) * 600},${180 - (v / maxVal) * 170}`).join(' ')}
-                  fill="none"
-                  stroke="#d1d5db"
-                  strokeWidth="2"
-                  strokeDasharray="6,4"
-                  strokeLinejoin="round"
+                <text
+                  x={px(peakIndex)}
+                  y={py(d.current[peakIndex]) - 13}
+                  textAnchor="middle"
+                  fill="white"
+                  fontSize="9"
+                  fontWeight="700"
+                  fontFamily="system-ui"
+                >
+                  Peak · {d.peakLabel} · {d.peakValue}
+                </text>
+                <line
+                  x1={px(peakIndex)} y1={py(d.current[peakIndex]) - 7}
+                  x2={px(peakIndex)} y2={py(d.current[peakIndex]) - 1}
+                  stroke="#4f46e5" strokeWidth="1.5"
                 />
-                {/* Dots for this week */}
-                {thisWeek.map((v, i) => (
-                  <circle key={i} cx={(i / 6) * 600} cy={180 - (v / maxVal) * 170} r="3.5" fill="#6366f1" />
-                ))}
-              </svg>
-              {/* X axis labels */}
-              <div className="flex justify-between mt-2 text-[11px] text-gray-400" aria-hidden="true">
-                {weekDays.map(d => <span key={d}>{d}</span>)}
-              </div>
-            </div>
-          </div>
-        </div>
+              </g>
 
-        {/* Effort Allocation */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-5">
-          <h2 className="text-base font-bold text-gray-900 mb-0.5">Effort Allocation</h2>
-          <p className="text-xs text-gray-400 mb-5">Tasks by goal category</p>
-
-          <div className="space-y-4 mb-6">
-            {effortData.map((item, i) => (
-              <div key={i}>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500 w-14 text-right shrink-0">{item.label}</span>
-                  <div className="flex-1 h-7 bg-gray-100 rounded-md overflow-hidden" role="progressbar" aria-valuenow={item.pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${item.label}: ${item.pct}%`}>
-                    <div
-                      className={`h-full ${item.color} rounded-md transition-all duration-500`}
-                      style={{ width: `${item.pct}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-2 gap-y-2.5 gap-x-4">
-            {effortLegend.map((item, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${item.color}`} aria-hidden="true"></span>
-                <span className="text-xs text-gray-600">{item.label}</span>
-                <span className="text-xs font-semibold text-gray-800 ml-auto">{item.pct}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* AI Intelligence Report */}
-      <section className="bg-white border border-gray-100 rounded-2xl p-6 mb-6" aria-labelledby="ai-report-heading">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              {/* X-axis labels */}
+              {d.labels.map((label, i) => (
+                <text
+                  key={label}
+                  x={px(i)}
+                  y={H + 16}
+                  textAnchor="middle"
+                  fill={i === peakIndex ? '#4f46e5' : '#9ca3af'}
+                  fontSize="10"
+                  fontWeight={i === peakIndex ? '700' : '400'}
+                  fontFamily="system-ui"
+                >
+                  {label}
+                </text>
+              ))}
             </svg>
           </div>
-          <div>
-            <h2 id="ai-report-heading" className="text-base font-bold text-gray-900">AI Intelligence Report</h2>
-            <p className="text-xs text-indigo-600 font-medium">Strategic adjustments for next week</p>
-          </div>
-        </div>
+        </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-          {aiInsights.map((insight, i) => (
-            <article key={i} className="bg-gray-50 border border-gray-100 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <div className={`w-8 h-8 ${insight.iconBg} rounded-lg flex items-center justify-center shrink-0`}>
-                  {insight.icon}
+        {/* ── Effort Allocation — full width ────────────────────────────── */}
+        <section className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm" aria-labelledby="effort-heading">
+          <div className="mb-5">
+            <h2 id="effort-heading" className="text-base font-bold text-gray-900">Effort Allocation</h2>
+            <p className="text-xs text-gray-400">Tasks by goal category — week over week</p>
+          </div>
+
+          <div className="space-y-4">
+            {d.effort.map(item => {
+              const delta = item.pct - item.prev
+              return (
+                <div key={item.label}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-700 w-16">{item.label}</span>
+                      <TrendArrow delta={delta} />
+                    </div>
+                    <span className={`text-sm font-bold ${item.text}`}>{item.pct}%</span>
+                  </div>
+                  <div className="relative h-7 bg-gray-100 rounded-lg overflow-hidden" role="progressbar" aria-valuenow={item.pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${item.label}: ${item.pct}%`}>
+                    <div
+                      className={`h-full ${item.color} rounded-lg flex items-center justify-end pr-3 transition-all duration-700`}
+                      style={{ width: `${item.pct}%`, minWidth: '3rem' }}
+                    >
+                      <span className="text-[11px] font-bold text-white">{item.pct}%</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-800 mb-1">{insight.title}</p>
-                  <p className="text-xs text-gray-500 leading-relaxed">{insight.desc}</p>
+              )
+            })}
+          </div>
+        </section>
+
+        {/* ── AI Insights ──────────────────────────────────────────────── */}
+        <section className="bg-gray-100/70 border border-gray-200 rounded-2xl p-5" aria-labelledby="ai-insights-heading">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <div>
+              <h2 id="ai-insights-heading" className="text-base font-bold text-gray-900">AI Insights</h2>
+              <p className="text-xs text-indigo-600 font-medium">Strategic adjustments for next week</p>
+            </div>
+          </div>
+
+          {/* Hero insight — full width */}
+          {heroInsight && (
+            <article className={`rounded-2xl border-l-4 p-5 mb-4 ${heroInsight.accent}`}>
+              <div className="flex items-start gap-4">
+                <div className={`w-10 h-10 ${heroInsight.iconBg} rounded-xl flex items-center justify-center shrink-0`}>
+                  <span className={heroInsight.iconColor}>{heroInsight.icon}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${heroInsight.tagColor}`}>{heroInsight.tag}</span>
+                  </div>
+                  <p className="text-sm font-bold text-gray-900 mb-1">{heroInsight.title}</p>
+                  <p className="text-xs text-gray-500 leading-relaxed">{heroInsight.desc}</p>
                 </div>
               </div>
+              <div className="flex justify-end mt-3">
+                <button className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1 transition-colors">
+                  {heroInsight.cta}
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                </button>
+              </div>
             </article>
+          )}
+
+          {/* Sub-insights — 3 in a row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {subInsights.map(ins => (
+              <article key={ins.id} className={`rounded-2xl border-l-4 p-4 flex flex-col ${ins.accent}`}>
+                <div className="flex items-start gap-3 flex-1">
+                  <div className={`w-8 h-8 ${ins.iconBg} rounded-lg flex items-center justify-center shrink-0`}>
+                    <span className={ins.iconColor}>{ins.icon}</span>
+                  </div>
+                  <div>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider ${ins.tagColor}`}>{ins.tag}</span>
+                    <p className="text-sm font-bold text-gray-900 mt-1 mb-1">{ins.title}</p>
+                    <p className="text-[11px] text-gray-500 leading-relaxed">{ins.desc}</p>
+                  </div>
+                </div>
+                <div className="flex justify-end mt-3">
+                  <button className="text-[11px] font-semibold text-gray-500 hover:text-indigo-600 inline-flex items-center gap-1 transition-colors">
+                    {ins.cta}
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Bottom stats bar ─────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {d.bottomStats.map((s, i) => (
+            <div key={i} className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-center gap-3 shadow-sm">
+              <span className="text-xl" aria-hidden="true">{s.icon}</span>
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{s.label}</p>
+                <p className="text-xl font-extrabold text-gray-900">{s.value}</p>
+              </div>
+            </div>
           ))}
         </div>
 
-        <div className="text-right">
-          <button className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1 transition-colors">
-            Apply AI-Optimized Schedule
+        {/* ── Full-width CTA ───────────────────────────────────────────── */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <button
+            onClick={() => navigate('/chat')}
+            className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-200/60 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
+            Apply AI-Optimized Schedule to Next Week
           </button>
-        </div>
-      </section>
-
-      {/* Bottom Stats Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        {bottomStats.map((stat, i) => (
-          <div key={i} className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-center gap-3">
-            <span className="text-lg" aria-hidden="true">{stat.icon}</span>
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</p>
-              <p className="text-xl font-extrabold text-gray-900">{stat.value}</p>
-            </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 mt-3">
+            <p className="text-[11px] text-gray-400">
+              Last updated: <span className="font-semibold text-gray-500">{d.updated}</span>
+            </p>
+            <button className="text-[11px] font-semibold text-gray-400 hover:text-indigo-600 inline-flex items-center gap-1 transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Export Report
+            </button>
           </div>
-        ))}
+        </div>
+
       </div>
     </div>
   )
