@@ -57,7 +57,7 @@ const Header = () => {
               to="/login"
               className="px-6 py-2.5 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm hover:shadow-lg hover:shadow-indigo-500/25 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 flex items-center gap-2"
             >
-              <span>Get Started</span>
+              <span>Login</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
@@ -97,7 +97,7 @@ const Header = () => {
               to="/login"
               className="px-4 py-2.5 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm text-center transition-all duration-300 mt-1"
             >
-              Get Started
+              Login
             </Link>
           </div>
         </div>
