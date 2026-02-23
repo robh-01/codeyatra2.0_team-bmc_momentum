@@ -4,12 +4,19 @@ import { useGoalStore } from '../store/goalStore'
 import AIChat from '../components/UI/AIChat'
 import { goalApi } from '../services/api'
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
 const Goals = () => {
   // Navigation state: 'goals' | 'milestones' | 'tasks'
   const [view, setView] = useState('goals')
   const [newGoalTitle, setNewGoalTitle] = useState('')
   const [newMilestoneTitle, setNewMilestoneTitle] = useState('')
   const [newTaskTitle, setNewTaskTitle] = useState('')
+
+  // Goal details state
+  const [proficiencyLevel, setProficiencyLevel] = useState('')
+  const [targetScope, setTargetScope] = useState('')
+  const [targetDays, setTargetDays] = useState('')
 
   // AI Discussion state
   const [aiObjective, setAiObjective] = useState('')
@@ -19,6 +26,10 @@ const Goals = () => {
   const [chatError, setChatError] = useState(null)
   const [streamingContent, setStreamingContent] = useState('')
   const [thinkingMode, setThinkingMode] = useState(true)
+
+  // Checklist state
+  const [expandedChecklist, setExpandedChecklist] = useState(null)
+  const [newChecklistItem, setNewChecklistItem] = useState('')
   
   // Zustand store
   const {
@@ -56,8 +67,14 @@ const Goals = () => {
       title: newGoalTitle.trim(),
       description: null,
       targetDate: null,
+      proficiencyLevel: proficiencyLevel || null,
+      targetScope: targetScope || null,
+      targetDays: targetDays ? parseInt(targetDays) : null,
     })
     setNewGoalTitle('')
+    setProficiencyLevel('')
+    setTargetScope('')
+    setTargetDays('')
   }
 
   // Handle selecting a goal and navigating to milestones view
@@ -112,6 +129,49 @@ const Goals = () => {
     const newStatus = statusCycle[task.status] || 'PENDING'
     await toggleTaskStatus(taskId, newStatus)
     
+    if (selectedGoal) {
+      await fetchGoal(selectedGoal.id)
+    }
+  }
+
+  // Toggle checklist item
+  const handleToggleChecklistItem = async (milestoneId, itemIndex) => {
+    const milestone = milestones.find(m => m.id === milestoneId)
+    if (!milestone || !milestone.checklist) return
+
+    const checklist = [...milestone.checklist]
+    checklist[itemIndex].done = !checklist[itemIndex].done
+
+    await goalApi.updateMilestone(milestoneId, { checklist })
+    if (selectedGoal) {
+      await fetchGoal(selectedGoal.id)
+    }
+  }
+
+  // Add checklist item
+  const handleAddChecklistItem = async (milestoneId) => {
+    if (!newChecklistItem.trim()) return
+
+    const milestone = milestones.find(m => m.id === milestoneId)
+    const checklist = milestone?.checklist ? [...milestone.checklist] : []
+    checklist.push({ text: newChecklistItem.trim(), done: false })
+
+    await goalApi.updateMilestone(milestoneId, { checklist })
+    setNewChecklistItem('')
+    if (selectedGoal) {
+      await fetchGoal(selectedGoal.id)
+    }
+  }
+
+  // Delete checklist item
+  const handleDeleteChecklistItem = async (milestoneId, itemIndex) => {
+    const milestone = milestones.find(m => m.id === milestoneId)
+    if (!milestone || !milestone.checklist) return
+
+    const checklist = [...milestone.checklist]
+    checklist.splice(itemIndex, 1)
+
+    await goalApi.updateMilestone(milestoneId, { checklist })
     if (selectedGoal) {
       await fetchGoal(selectedGoal.id)
     }
@@ -366,7 +426,7 @@ const Goals = () => {
             {/* Manual Goal Input */}
             <div className="mb-6 animate-slide-up stagger-2">
               <label htmlFor="manual-goal-input" className="block text-sm font-semibold text-gray-700 mb-2">Create a goal manually</label>
-              <div className="flex gap-3">
+              <div className="flex gap-3 mb-3">
                 <input
                   id="manual-goal-input"
                   type="text"
@@ -386,6 +446,35 @@ const Goals = () => {
                   </svg>
                   Create Goal
                 </button>
+              </div>
+              {/* Optional goal details */}
+              <div className="flex gap-3 items-center">
+                <select
+                  value={proficiencyLevel}
+                  onChange={(e) => setProficiencyLevel(e.target.value)}
+                  className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                >
+                  <option value="">Proficiency</option>
+                  <option value="BEGINNER">Beginner</option>
+                  <option value="INTERMEDIATE">Intermediate</option>
+                  <option value="ADVANCED">Advanced</option>
+                  <option value="EXPERT">Expert</option>
+                </select>
+                <input
+                  type="text"
+                  value={targetScope}
+                  onChange={(e) => setTargetScope(e.target.value)}
+                  placeholder="What you want to achieve..."
+                  className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                />
+                <input
+                  type="number"
+                  value={targetDays}
+                  onChange={(e) => setTargetDays(e.target.value)}
+                  placeholder="Days"
+                  min="1"
+                  className="w-20 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                />
               </div>
             </div>
 
@@ -567,6 +656,17 @@ const Goals = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        {(milestone.checklist && milestone.checklist.length > 0) && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setExpandedChecklist(expandedChecklist === milestone.id ? null : milestone.id); }}
+                            className="p-1.5 hover:bg-gray-100 rounded-lg transition-all text-gray-400"
+                            title="Toggle checklist"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                          </button>
+                        )}
                         <button
                           onClick={(e) => { e.stopPropagation(); deleteMilestone(milestone.id); fetchGoal(selectedGoal.id); }}
                           className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all text-gray-400"
@@ -584,6 +684,81 @@ const Goals = () => {
                 </ul>
               )}
             </section>
+
+            {/* Expandable Checklists */}
+            {expandedChecklist && (() => {
+              const expandedMilestone = milestones.find(m => m.id === expandedChecklist)
+              if (!expandedMilestone) return null
+              return (
+                <section className="bg-white border border-gray-100 rounded-2xl p-6 mb-6 animate-slide-up">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-gray-700">Checklist: {expandedMilestone.title}</h3>
+                    <button
+                      onClick={() => setExpandedChecklist(null)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  {/* Add checklist item */}
+                  <div className="flex gap-2 mb-4">
+                    <input
+                      type="text"
+                      value={newChecklistItem}
+                      onChange={(e) => setNewChecklistItem(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddChecklistItem(expandedChecklist)}
+                      placeholder="Add a checklist item..."
+                      className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                    />
+                    <button
+                      onClick={() => handleAddChecklistItem(expandedChecklist)}
+                      disabled={!newChecklistItem.trim()}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {/* Checklist items */}
+                  {expandedMilestone.checklist && expandedMilestone.checklist.length > 0 ? (
+                    <ul className="space-y-2">
+                      {expandedMilestone.checklist.map((item, idx) => (
+                        <li key={idx} className="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg group">
+                          <button
+                            onClick={() => handleToggleChecklistItem(expandedChecklist, idx)}
+                            className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                              item.done
+                                ? 'bg-indigo-600 border-indigo-600'
+                                : 'border-gray-300 hover:border-indigo-400'
+                            }`}
+                          >
+                            {item.done && (
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </button>
+                          <span className={`flex-1 text-sm ${item.done ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                            {item.text}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteChecklistItem(expandedChecklist, idx)}
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 hover:text-red-500 rounded transition-all"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-400 text-center py-4">No checklist items yet</p>
+                  )}
+                </section>
+              )
+            })()}
           </>
         )}
 

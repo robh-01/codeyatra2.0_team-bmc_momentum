@@ -217,7 +217,7 @@ export async function getAllGoals(req, res) {
  */
 export async function createGoal(req, res) {
   try {
-    const { title, description, targetDate } = req.body;
+    const { title, description, targetDate, proficiencyLevel, targetScope, targetDays } = req.body;
 
     if (!title || title.trim() === '') {
       return res.status(400).json({ error: 'Title is required' });
@@ -227,7 +227,10 @@ export async function createGoal(req, res) {
       data: {
         title: title.trim(),
         description: description?.trim() || null,
-        targetDate: targetDate ? new Date(targetDate) : null
+        targetDate: targetDate ? new Date(targetDate) : null,
+        proficiencyLevel: proficiencyLevel || null,
+        targetScope: targetScope?.trim() || null,
+        targetDays: targetDays ? parseInt(targetDays) : null
       }
     });
 
@@ -305,7 +308,7 @@ export async function getGoal(req, res) {
 export async function updateGoal(req, res) {
   try {
     const { id } = req.params;
-    const { title, description, targetDate, status } = req.body;
+    const { title, description, targetDate, status, proficiencyLevel, targetScope, targetDays } = req.body;
 
     // Check if goal exists
     const existingGoal = await prisma.goal.findUnique({ where: { id } });
@@ -318,6 +321,9 @@ export async function updateGoal(req, res) {
     if (description !== undefined) updateData.description = description?.trim() || null;
     if (targetDate !== undefined) updateData.targetDate = targetDate ? new Date(targetDate) : null;
     if (status !== undefined) updateData.status = status;
+    if (proficiencyLevel !== undefined) updateData.proficiencyLevel = proficiencyLevel;
+    if (targetScope !== undefined) updateData.targetScope = targetScope?.trim() || null;
+    if (targetDays !== undefined) updateData.targetDays = targetDays ? parseInt(targetDays) : null;
 
     const goal = await prisma.goal.update({
       where: { id },
@@ -359,7 +365,7 @@ export async function deleteGoal(req, res) {
 export async function createMilestone(req, res) {
   try {
     const { goalId } = req.params;
-    const { title, description, targetDate } = req.body;
+    const { title, description, targetDate, checklist } = req.body;
 
     if (!title || title.trim() === '') {
       return res.status(400).json({ error: 'Title is required' });
@@ -384,6 +390,7 @@ export async function createMilestone(req, res) {
         title: title.trim(),
         description: description?.trim() || null,
         targetDate: targetDate ? new Date(targetDate) : null,
+        checklist: checklist || null,
         orderIndex
       }
     });
@@ -392,5 +399,38 @@ export async function createMilestone(req, res) {
   } catch (error) {
     console.error('Error creating milestone:', error);
     res.status(500).json({ error: 'Failed to create milestone', details: error.message });
+  }
+}
+
+/**
+ * Update a milestone
+ */
+export async function updateMilestone(req, res) {
+  try {
+    const { id } = req.params;
+    const { title, description, targetDate, status, checklist } = req.body;
+
+    // Check if milestone exists
+    const existingMilestone = await prisma.milestone.findUnique({ where: { id } });
+    if (!existingMilestone) {
+      return res.status(404).json({ error: 'Milestone not found' });
+    }
+
+    const updateData = {};
+    if (title !== undefined) updateData.title = title.trim();
+    if (description !== undefined) updateData.description = description?.trim() || null;
+    if (targetDate !== undefined) updateData.targetDate = targetDate ? new Date(targetDate) : null;
+    if (status !== undefined) updateData.status = status;
+    if (checklist !== undefined) updateData.checklist = checklist;
+
+    const milestone = await prisma.milestone.update({
+      where: { id },
+      data: updateData
+    });
+
+    res.json(milestone);
+  } catch (error) {
+    console.error('Error updating milestone:', error);
+    res.status(500).json({ error: 'Failed to update milestone', details: error.message });
   }
 }
