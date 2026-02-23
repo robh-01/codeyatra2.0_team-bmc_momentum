@@ -100,7 +100,7 @@ const Leaderboard = () => {
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Welcome to the Hall of Focus</h1>
           <p className="text-sm text-gray-500">Compete with the community to earn exclusive badges and climb the ranks.<br />Every focus minute counts towards your legacy.</p>
         </div>
-        <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-5 py-3 text-right min-w-[220px]">
+        <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-5 py-3 text-right min-w-220">
           <p className="text-xs font-bold text-indigo-700 mb-1.5">Season Goal: 50,000 Group XP</p>
           <div className="w-full h-2 bg-indigo-200 rounded-full overflow-hidden mb-1" role="progressbar" aria-valuenow={68} aria-valuemin={0} aria-valuemax={100} aria-label="Community XP progress">
             <div className="h-full bg-indigo-600 rounded-full transition-all duration-500" style={{ width: '68%' }}></div>
