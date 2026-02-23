@@ -7,6 +7,7 @@ const Dashboard = memo(() => {
   const [goals, setGoals] = useState([])
   const [todayTasks, setTodayTasks] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showSidebar, setShowSidebar] = useState(false)
   
   const user = useMemo(() => JSON.parse(localStorage.getItem('user') || '{"name": "Alex Rivera"}'), [])
   const userName = user.name || 'Alex Rivera'
@@ -113,25 +114,34 @@ const Dashboard = memo(() => {
   return (
     <div className="flex h-full">
       {/* Main Content */}
-      <main className="flex-1 px-8 py-6 overflow-y-auto">
+      <main className="flex-1 px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto">
         {/* Greeting */}
-        <div className="flex items-start justify-between mb-8 animate-fade-in">
+        <div className="flex flex-col sm:flex-row items-start justify-between mb-6 sm:mb-8 gap-3 sm:gap-0 animate-fade-in">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-full mb-3">
               <span className="text-sm" aria-hidden="true">✨</span>
               <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">Your Daily Brief</span>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{greeting}, {userName}</h1>
-            <p className="text-gray-500">You're <span className="font-semibold text-indigo-600">82%</span> closer to your weekly milestone. Let's crush today's focus sessions.</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{greeting}, {userName}</h1>
+            <p className="text-sm sm:text-base text-gray-500">You're <span className="font-semibold text-indigo-600">82%</span> closer to your weekly milestone. Let's crush today's focus sessions.</p>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-full" role="status">
-            <span className="text-sm" aria-hidden="true">🔥</span>
-            <span className="text-sm font-semibold text-amber-700">7 Day Streak</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-full" role="status">
+              <span className="text-sm" aria-hidden="true">🔥</span>
+              <span className="text-sm font-semibold text-amber-700">7 Day Streak</span>
+            </div>
+            <button
+              onClick={() => setShowSidebar(true)}
+              className="xl:hidden p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors"
+              aria-label="Show sidebar stats"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            </button>
           </div>
         </div>
 
         {/* Active Goals */}
-        <section className="mb-8 animate-slide-up stagger-1" aria-labelledby="goals-heading">
+        <section className="mb-6 sm:mb-8 animate-slide-up stagger-1" aria-labelledby="goals-heading">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
@@ -147,9 +157,9 @@ const Dashboard = memo(() => {
               </svg>
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {(loading ? defaultGoals : goals).map((goal, i) => (
-              <article key={i} className="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md hover:border-gray-200 transition-all duration-300 cursor-pointer group">
+              <article key={i} className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 hover:shadow-md hover:border-gray-200 transition-all duration-300 cursor-pointer group">
                 <div className="flex items-center justify-between mb-3">
                   <div className={`w-10 h-10 ${getColorClass(goal.color, 'icon')} rounded-xl flex items-center justify-center text-lg`} aria-hidden="true">
                     {goal.icon}
@@ -204,10 +214,10 @@ const Dashboard = memo(() => {
               {tasks.map((task) => (
               <li
                 key={task.id}
-                className={`bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-center justify-between hover:shadow-md hover:border-gray-200 transition-all duration-300 group ${checkedTasks.includes(task.id) ? 'opacity-50' : ''
+                className={`bg-white border border-gray-100 rounded-2xl px-3 sm:px-5 py-3 sm:py-4 flex items-center justify-between hover:shadow-md hover:border-gray-200 transition-all duration-300 group ${checkedTasks.includes(task.id) ? 'opacity-50' : ''
                   }`}
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                   <button
                     onClick={() => toggleTask(task.id)}
                     aria-label={`Mark "${task.title}" as ${checkedTasks.includes(task.id) ? 'incomplete' : 'complete'}`}
@@ -222,13 +232,13 @@ const Dashboard = memo(() => {
                       </svg>
                     )}
                   </button>
-                  <div>
-                    <div className="flex items-center gap-2.5">
-                      <span className={`text-sm font-medium ${checkedTasks.includes(task.id) ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+                      <span className={`text-sm font-medium truncate ${checkedTasks.includes(task.id) ? 'line-through text-gray-400' : 'text-gray-800'}`}>
                         {task.title}
                       </span>
                       {task.aiRecommended && (
-                        <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[11px] font-semibold rounded-md">AI Recommended</span>
+                        <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[11px] font-semibold rounded-md hidden sm:inline">AI</span>
                       )}
                     </div>
                     <div className="flex items-center gap-3 mt-1.5">
@@ -256,7 +266,21 @@ const Dashboard = memo(() => {
       </main>
 
       {/* Right Sidebar */}
-      <aside className="w-72 border-l border-gray-100 bg-white px-5 py-6 overflow-y-auto shrink-0 hidden xl:block" aria-label="Dashboard sidebar">
+      {showSidebar && (
+        <div className="fixed inset-0 bg-black/40 z-40 xl:hidden" onClick={() => setShowSidebar(false)} />
+      )}
+      <aside className={`${
+        showSidebar
+          ? 'fixed inset-y-0 right-0 z-50 w-80 shadow-2xl'
+          : 'hidden'
+      } xl:static xl:block xl:w-72 xl:shadow-none border-l border-gray-100 bg-white px-5 py-6 overflow-y-auto shrink-0`} aria-label="Dashboard sidebar">
+        {/* Mobile close button */}
+        <div className="flex items-center justify-between mb-4 xl:hidden">
+          <span className="text-sm font-bold text-gray-700">Stats & Actions</span>
+          <button onClick={() => setShowSidebar(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Close sidebar">
+            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
         {/* Performance Stats */}
         <div className="mb-7">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Performance Stats</h3>

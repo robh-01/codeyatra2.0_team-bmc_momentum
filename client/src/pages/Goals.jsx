@@ -337,7 +337,7 @@ const Goals = () => {
   return (
     <div className="flex h-full">
       {/* Main Content */}
-      <div className={`flex-1 px-8 py-6 overflow-y-auto transition-all duration-300 ${showChat ? 'pr-4' : ''}`}>
+      <div className={`flex-1 px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto transition-all duration-300 ${showChat ? 'md:pr-4' : ''}`}>
         {/* Back Link */}
         <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors mb-4">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -347,39 +347,41 @@ const Goals = () => {
         </Link>
 
         {/* Header */}
-        <div className="flex items-start justify-between mb-8 animate-fade-in">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 sm:mb-8 animate-fade-in">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 truncate">
               {view === 'goals' && 'Create New Goal'}
               {view === 'milestones' && selectedGoal?.title}
               {view === 'tasks' && selectedMilestone?.title}
             </h1>
-            <p className="text-gray-500">
+            <p className="text-sm sm:text-base text-gray-500">
               {view === 'goals' && 'Define your vision and break it down into actionable steps.'}
               {view === 'milestones' && 'Break down your goal into milestones.'}
               {view === 'tasks' && 'Add tasks to complete this milestone.'}
             </p>
           </div>
-          <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-5 py-3">
-            <div>
-              <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">AI Powered</p>
-              <p className="text-lg font-extrabold text-indigo-700">Goal Coach</p>
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-4 sm:px-5 py-2 sm:py-3">
+              <div>
+                <p className="text-[10px] sm:text-xs font-bold text-indigo-600 uppercase tracking-wider">AI Powered</p>
+                <p className="text-base sm:text-lg font-extrabold text-indigo-700">Goal Coach</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
             </div>
-            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-5 py-3">
-            <div>
-              <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Total Goals</p>
-              <p className="text-lg font-extrabold text-indigo-700">{goals.length}</p>
-            </div>
-            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-4 sm:px-5 py-2 sm:py-3">
+              <div>
+                <p className="text-[10px] sm:text-xs font-bold text-indigo-600 uppercase tracking-wider">Total Goals</p>
+                <p className="text-base sm:text-lg font-extrabold text-indigo-700">{goals.length}</p>
+              </div>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -396,9 +398,9 @@ const Goals = () => {
         {view === 'goals' && (
           <>
             {/* AI Discussion Input */}
-            <div className="mb-8 animate-slide-up stagger-1">
+            <div className="mb-6 sm:mb-8 animate-slide-up stagger-1">
               <label htmlFor="ai-goal-input" className="block text-sm font-semibold text-gray-700 mb-2">What's your main goal?</label>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   id="ai-goal-input"
                   type="text"
@@ -406,29 +408,32 @@ const Goals = () => {
                   onChange={(e) => setAiObjective(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && startGoalDiscussion()}
                   placeholder="e.g., Launch my SaaS MVP by Q3, Learn Spanish to conversational level..."
-                  className="flex-1 px-5 py-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
+                  className="flex-1 px-4 sm:px-5 py-3 sm:py-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
                 />
-                <select
-                  value={aiProficiencyLevel}
-                  onChange={(e) => setAiProficiencyLevel(e.target.value)}
-                  className="px-3 py-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
-                  title="Your proficiency level"
-                >
-                  <option value="BEGINNER">Beginner</option>
-                  <option value="INTERMEDIATE">Intermediate</option>
-                  <option value="ADVANCED">Advanced</option>
-                  <option value="EXPERT">Expert</option>
-                </select>
-                <button
-                  onClick={startGoalDiscussion}
-                  disabled={!aiObjective.trim() || isLoading}
-                  className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  Discuss with AI
-                </button>
+                <div className="flex gap-3">
+                  <select
+                    value={aiProficiencyLevel}
+                    onChange={(e) => setAiProficiencyLevel(e.target.value)}
+                    className="flex-1 sm:flex-none px-3 py-3 sm:py-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                    title="Your proficiency level"
+                  >
+                    <option value="BEGINNER">Beginner</option>
+                    <option value="INTERMEDIATE">Intermediate</option>
+                    <option value="ADVANCED">Advanced</option>
+                    <option value="EXPERT">Expert</option>
+                  </select>
+                  <button
+                    onClick={startGoalDiscussion}
+                    disabled={!aiObjective.trim() || isLoading}
+                    className="px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span className="hidden sm:inline">Discuss with AI</span>
+                    <span className="sm:hidden">AI</span>
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-gray-400 mt-2">
                 AI will help you break down this goal into milestones with checkpoints. Be thorough for beginners, concise for experts.
@@ -446,7 +451,7 @@ const Goals = () => {
             {/* Manual Goal Input */}
             <div className="mb-6 animate-slide-up stagger-2">
               <label htmlFor="manual-goal-input" className="block text-sm font-semibold text-gray-700 mb-2">Create a goal manually</label>
-              <div className="flex gap-3 mb-3">
+              <div className="flex flex-col sm:flex-row gap-3 mb-3">
                 <input
                   id="manual-goal-input"
                   type="text"
@@ -454,12 +459,12 @@ const Goals = () => {
                   onChange={(e) => setNewGoalTitle(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreateGoal()}
                   placeholder="Enter goal title..."
-                  className="flex-1 px-5 py-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
+                  className="flex-1 px-4 sm:px-5 py-3 sm:py-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
                 />
                 <button
                   onClick={handleCreateGoal}
                   disabled={!newGoalTitle.trim() || loading}
-                  className="px-6 py-4 bg-white border border-gray-200 text-gray-700 rounded-2xl font-semibold text-sm hover:border-indigo-300 hover:text-indigo-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 sm:px-6 py-3 sm:py-4 bg-white border border-gray-200 text-gray-700 rounded-2xl font-semibold text-sm hover:border-indigo-300 hover:text-indigo-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -468,7 +473,7 @@ const Goals = () => {
                 </button>
               </div>
               {/* Optional goal details */}
-              <div className="flex gap-3 items-center">
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                 <select
                   value={proficiencyLevel}
                   onChange={(e) => setProficiencyLevel(e.target.value)}
@@ -493,13 +498,13 @@ const Goals = () => {
                   onChange={(e) => setTargetDays(e.target.value)}
                   placeholder="Days"
                   min="1"
-                  className="w-20 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                  className="w-full sm:w-20 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
                 />
               </div>
             </div>
 
             {/* Goals List */}
-            <section className="bg-white border border-gray-100 rounded-2xl p-6 mb-6 animate-slide-up stagger-2" aria-labelledby="goals-heading">
+            <section className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6 mb-6 animate-slide-up stagger-2" aria-labelledby="goals-heading">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -539,7 +544,7 @@ const Goals = () => {
                     <li
                       key={goal.id}
                       onClick={() => handleSelectGoal(goal)}
-                      className="flex items-center gap-4 px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50 transition-all duration-200 cursor-pointer group"
+                      className="flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3 sm:py-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50 transition-all duration-200 cursor-pointer group"
                     >
                       <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
                         <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -599,7 +604,7 @@ const Goals = () => {
             {/* Milestone Input */}
             <div className="mb-6 animate-slide-up stagger-1">
               <label htmlFor="milestone-input" className="block text-sm font-semibold text-gray-700 mb-2">Add a milestone</label>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   id="milestone-input"
                   type="text"
@@ -607,12 +612,12 @@ const Goals = () => {
                   onChange={(e) => setNewMilestoneTitle(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreateMilestone()}
                   placeholder="e.g., Complete market research, Build MVP, Launch beta..."
-                  className="flex-1 px-5 py-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
+                  className="flex-1 px-4 sm:px-5 py-3 sm:py-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
                 />
                 <button
                   onClick={handleCreateMilestone}
                   disabled={!newMilestoneTitle.trim() || loading}
-                  className="px-6 py-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium text-gray-600 hover:border-indigo-200 hover:text-indigo-600 transition-all duration-200 flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-4 sm:px-6 py-3 sm:py-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium text-gray-600 hover:border-indigo-200 hover:text-indigo-600 transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -623,7 +628,7 @@ const Goals = () => {
             </div>
 
             {/* Milestones List */}
-            <section className="bg-white border border-gray-100 rounded-2xl p-6 mb-6 animate-slide-up stagger-2">
+            <section className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6 mb-6 animate-slide-up stagger-2">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -666,7 +671,7 @@ const Goals = () => {
                     >
                       <div
                         onClick={() => hasChecklist && setExpandedChecklist(isExpanded ? null : milestone.id)}
-                        className={`flex items-center gap-4 px-5 py-4 rounded-xl transition-all duration-200 ${hasChecklist ? 'cursor-pointer hover:bg-indigo-50' : ''}`}
+                        className={`flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3 sm:py-4 rounded-xl transition-all duration-200 ${hasChecklist ? 'cursor-pointer hover:bg-indigo-50' : ''}`}
                       >
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isComplete ? 'bg-green-100' : 'bg-blue-100'}`}>
                           {isComplete ? (
@@ -795,7 +800,7 @@ const Goals = () => {
             {/* Task Input */}
             <div className="mb-6 animate-slide-up stagger-1">
               <label htmlFor="task-input" className="block text-sm font-semibold text-gray-700 mb-2">Add a task</label>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   id="task-input"
                   type="text"
@@ -803,12 +808,12 @@ const Goals = () => {
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
                   placeholder="e.g., Research competitors, Draft wireframes, Write documentation..."
-                  className="flex-1 px-5 py-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
+                  className="flex-1 px-4 sm:px-5 py-3 sm:py-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
                 />
                 <button
                   onClick={handleCreateTask}
                   disabled={!newTaskTitle.trim() || loading}
-                  className="px-6 py-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium text-gray-600 hover:border-indigo-200 hover:text-indigo-600 transition-all duration-200 flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-4 sm:px-6 py-3 sm:py-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium text-gray-600 hover:border-indigo-200 hover:text-indigo-600 transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -819,7 +824,7 @@ const Goals = () => {
             </div>
 
             {/* Tasks List */}
-            <section className="bg-white border border-gray-100 rounded-2xl p-6 mb-6 animate-slide-up stagger-2">
+            <section className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6 mb-6 animate-slide-up stagger-2">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -850,7 +855,7 @@ const Goals = () => {
                   {tasks.map((task) => (
                     <li
                       key={task.id}
-                      className={`flex items-center gap-4 px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-gray-200 transition-all duration-200 group ${
+                      className={`flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3 sm:py-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-gray-200 transition-all duration-200 group ${
                         task.status === 'COMPLETED' ? 'opacity-60' : ''
                       }`}
                     >
@@ -880,7 +885,7 @@ const Goals = () => {
                           {task.title}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 ml-auto">
+                      <div className="flex items-center gap-2 sm:gap-3 ml-auto">
                         {task.priority && (
                           <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase ${priorityColors[task.priority] || priorityColors.MEDIUM}`}>
                             {task.priority}
@@ -906,23 +911,23 @@ const Goals = () => {
 
             {/* Progress Summary */}
             {tasks.length > 0 && (
-              <div className="flex items-center justify-between mb-8 px-1 animate-slide-up stagger-3">
-                <div className="flex items-center gap-6">
+              <div className="flex items-center justify-between mb-6 sm:mb-8 px-1 animate-slide-up stagger-3">
+                <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                   <div>
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Total Tasks</p>
-                    <p className="text-2xl font-extrabold text-gray-900">{tasks.length}</p>
+                    <p className="text-xl sm:text-2xl font-extrabold text-gray-900">{tasks.length}</p>
                   </div>
-                  <div className="w-px h-10 bg-gray-200" aria-hidden="true"></div>
+                  <div className="w-px h-8 sm:h-10 bg-gray-200" aria-hidden="true"></div>
                   <div>
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Completed</p>
-                    <p className="text-2xl font-extrabold text-emerald-600">
+                    <p className="text-xl sm:text-2xl font-extrabold text-emerald-600">
                       {tasks.filter(t => t.status === 'COMPLETED').length}
                     </p>
                   </div>
-                  <div className="w-px h-10 bg-gray-200" aria-hidden="true"></div>
+                  <div className="w-px h-8 sm:h-10 bg-gray-200" aria-hidden="true"></div>
                   <div>
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">In Progress</p>
-                    <p className="text-2xl font-extrabold text-amber-600">
+                    <p className="text-xl sm:text-2xl font-extrabold text-amber-600">
                       {tasks.filter(t => t.status === 'IN_PROGRESS').length}
                     </p>
                   </div>
@@ -935,7 +940,7 @@ const Goals = () => {
 
       {/* AI Chat Sidebar */}
       {showChat && (
-        <div className="w-96 border-l border-gray-100 flex flex-col bg-gray-50 shrink-0">
+        <div className="fixed inset-0 z-50 md:static md:inset-auto md:z-auto w-full md:w-96 border-l border-gray-100 flex flex-col bg-gray-50 shrink-0">
           <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
             <h3 className="font-semibold text-gray-900">Goal Discussion</h3>
             <div className="flex items-center gap-2">

@@ -82,9 +82,9 @@ const Leaderboard = () => {
   ]
 
   return (
-    <div className="px-8 py-6 overflow-y-auto">
+    <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row items-start justify-between mb-6 gap-4 animate-fade-in">
+      <div className="flex flex-col lg:flex-row items-start justify-between mb-4 sm:mb-6 gap-4 animate-fade-in">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <span className="inline-flex items-center gap-1.5 bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">
@@ -97,10 +97,10 @@ const Leaderboard = () => {
               12 days remaining
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Welcome to the Hall of Focus</h1>
-          <p className="text-sm text-gray-500">Compete with the community to earn exclusive badges and climb the ranks.<br />Every focus minute counts towards your legacy.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Welcome to the Hall of Focus</h1>
+          <p className="text-xs sm:text-sm text-gray-500">Compete with the community to earn exclusive badges and climb the ranks.<br className="hidden sm:block" />Every focus minute counts towards your legacy.</p>
         </div>
-        <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-5 py-3 text-right min-w-[220px]">
+        <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 sm:px-5 py-3 text-right w-full sm:w-auto sm:min-w-[220px]">
           <p className="text-xs font-bold text-indigo-700 mb-1.5">Season Goal: 50,000 Group XP</p>
           <div className="w-full h-2 bg-indigo-200 rounded-full overflow-hidden mb-1" role="progressbar" aria-valuenow={68} aria-valuemin={0} aria-valuemax={100} aria-label="Community XP progress">
             <div className="h-full bg-indigo-600 rounded-full transition-all duration-500" style={{ width: '68%' }}></div>
@@ -110,10 +110,10 @@ const Leaderboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col lg:flex-row gap-5">
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-5">
         {/* Left - Community Rankings */}
         <div className="flex-1 min-w-0">
-          <div className="bg-white border border-gray-100 rounded-2xl p-6 mb-5">
+          <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6 mb-4 sm:mb-5">
             {/* Rankings Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-5 gap-3">
               <div className="flex items-center gap-2.5">
@@ -160,7 +160,7 @@ const Leaderboard = () => {
                 <div
                   key={user.rank}
                   role="listitem"
-                  className={`grid grid-cols-[40px_1fr_auto] sm:grid-cols-[60px_1fr_90px_90px_120px] items-center px-4 py-3.5 transition-colors ${user.isYou
+                  className={`grid grid-cols-[40px_1fr_auto] sm:grid-cols-[60px_1fr_90px_90px_120px] items-center px-2 sm:px-4 py-3 sm:py-3.5 transition-colors ${user.isYou
                     ? 'bg-indigo-50/60 border-l-[3px] border-l-indigo-500 rounded-r-lg'
                     : 'hover:bg-gray-50/50'
                     }`}
@@ -225,9 +225,9 @@ const Leaderboard = () => {
           </div>
 
           {/* Bottom CTA Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Focus Duel */}
-            <div className="bg-linear-to-br from-orange-400 to-orange-500 rounded-2xl p-5 text-white">
+            <div className="bg-linear-to-br from-orange-400 to-orange-500 rounded-2xl p-4 sm:p-5 text-white">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -245,7 +245,7 @@ const Leaderboard = () => {
             </div>
 
             {/* Study Group */}
-            <div className="bg-linear-to-br from-indigo-500 to-indigo-600 rounded-2xl p-5 text-white">
+            <div className="bg-linear-to-br from-indigo-500 to-indigo-600 rounded-2xl p-4 sm:p-5 text-white">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -265,18 +265,18 @@ const Leaderboard = () => {
         </div>
 
         {/* Right Sidebar */}
-        <aside className="w-full lg:w-72 shrink-0 space-y-5" aria-label="Your stats and achievements">
+        <aside className="w-full lg:w-72 shrink-0 space-y-4 sm:space-y-5" aria-label="Your stats and achievements">
           {/* Your Standing */}
-          <div className="bg-white border-2 border-indigo-200 rounded-2xl p-5">
+          <div className="bg-white border-2 border-indigo-200 rounded-2xl p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-gray-900">Your Standing</h3>
               <span className="text-xs font-semibold text-gray-400">Rank #42</span>
             </div>
 
-            <div className="flex items-baseline justify-between mb-4">
+            <div className="flex flex-row items-baseline justify-between mb-4">
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">TOTAL XP</p>
-                <p className="text-3xl font-extrabold text-gray-900">11,240</p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-gray-900">11,240</p>
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">NEXT LEVEL</p>
@@ -313,7 +313,7 @@ const Leaderboard = () => {
           </div>
 
           {/* Achievements */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-5">
+          <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5">
             <h3 className="text-base font-bold text-gray-900 mb-0.5">Achievements</h3>
             <p className="text-xs text-gray-400 mb-4">Visual milestones of your focus journey.</p>
 
@@ -340,7 +340,7 @@ const Leaderboard = () => {
           </div>
 
           {/* AI Tip */}
-          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
+          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 sm:p-4">
             <div className="flex gap-3">
               <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center shrink-0">
                 <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

@@ -309,20 +309,22 @@ const ChatSchedular = () => {
     }
   }
 
+  const [showSidebar, setShowSidebar] = useState(false)
+
   return (
-    <div className="flex h-full">
+    <div className="flex flex-col md:flex-row h-full">
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col border-r border-gray-100">
+      <div className="flex-1 flex flex-col md:border-r border-gray-100 min-h-0">
         {/* Chat Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between" role="banner">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm shadow-indigo-200">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between" role="banner">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm shadow-indigo-200">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
             <div>
-              <h1 className="text-sm font-bold text-gray-900">Daily Planner AI</h1>
+              <h1 className="text-xs sm:text-sm font-bold text-gray-900">Daily Planner AI</h1>
               <div className="flex items-center gap-1.5">
                 <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
                   <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isTyping ? 'bg-amber-400' : 'bg-emerald-400'} opacity-75`}></span>
@@ -334,29 +336,45 @@ const ChatSchedular = () => {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Thinking Mode Toggle */}
             <button 
               onClick={() => setThinkingMode(!thinkingMode)}
               title={thinkingMode ? "Thinking mode ON - AI will reason deeply" : "Thinking mode OFF - Faster responses"}
-              className={`p-2 rounded-lg transition-all duration-300 flex items-center gap-1.5 ${
+              className={`p-1.5 sm:p-2 rounded-lg transition-all duration-300 flex items-center gap-1.5 ${
                 thinkingMode 
                   ? 'bg-purple-100 text-purple-600 hover:bg-purple-200' 
                   : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
               }`}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
               <span className="text-xs font-medium hidden sm:inline">{thinkingMode ? 'Deep' : 'Fast'}</span>
             </button>
+            {/* Mobile sidebar toggle */}
+            <button
+              onClick={() => setShowSidebar(!showSidebar)}
+              className="p-1.5 sm:p-2 hover:bg-gray-50 rounded-lg transition-colors md:hidden relative"
+              aria-label="Toggle daily view"
+              title="View daily plan"
+            >
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              {scheduledTasks.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-indigo-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {scheduledTasks.length}
+                </span>
+              )}
+            </button>
             <button 
               onClick={resetChat}
-              className="p-2 hover:bg-gray-50 rounded-lg transition-colors" 
+              className="p-1.5 sm:p-2 hover:bg-gray-50 rounded-lg transition-colors" 
               aria-label="Reset chat"
               title="Start over"
             >
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
@@ -365,13 +383,13 @@ const ChatSchedular = () => {
 
         {/* Error Banner */}
         {error && (
-          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          <div className="mx-4 sm:mx-6 mt-3 sm:mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
             <strong>Connection issue:</strong> {error}
           </div>
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5" role="log" aria-label="Chat messages" aria-live="polite">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5" role="log" aria-label="Chat messages" aria-live="polite">
           {/* Landing state - show before chat is initialized */}
           {!isInitialized && !isTyping && (
             <div className="flex flex-col items-center justify-center h-full text-center px-4">
@@ -405,7 +423,7 @@ const ChatSchedular = () => {
           {messages.map((message, index) => (
             <div key={index}>
               <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex gap-3 max-w-[75%] ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex gap-2 sm:gap-3 max-w-[90%] sm:max-w-[75%] ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
                   {(message.role === 'assistant' || message.role === 'error') && (
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm ${
                       message.role === 'error'
@@ -451,7 +469,7 @@ const ChatSchedular = () => {
           {/* Streaming content - show AI response as it arrives */}
           {isTyping && streamingContent && (
             <div className="flex justify-start" role="status" aria-label="AI is responding">
-              <div className="flex gap-3 max-w-[75%]">
+              <div className="flex gap-2 sm:gap-3 max-w-[90%] sm:max-w-[75%]">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200" aria-hidden="true">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -468,7 +486,7 @@ const ChatSchedular = () => {
           {/* Typing indicator - only show when loading but no content yet */}
           {isTyping && !streamingContent && (
             <div className="flex justify-start" role="status" aria-label="AI is typing">
-              <div className="flex gap-3 max-w-[75%]">
+              <div className="flex gap-2 sm:gap-3 max-w-[90%] sm:max-w-[75%]">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200" aria-hidden="true">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -489,14 +507,14 @@ const ChatSchedular = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="px-6 pb-3">
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Quick reply options">
+        <div className="px-4 sm:px-6 pb-2 sm:pb-3">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" role="group" aria-label="Quick reply options">
             {quickActions.map((action, i) => (
               <button
                 key={i}
                 onClick={() => handleSend(action)}
                 disabled={isTyping}
-                className="px-4 py-2 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:border-indigo-200 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200 disabled:opacity-50"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:border-indigo-200 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-200 disabled:opacity-50 whitespace-nowrap shrink-0"
               >
                 {action}
               </button>
@@ -505,8 +523,8 @@ const ChatSchedular = () => {
         </div>
 
         {/* Input Area */}
-        <div className="px-6 py-4 border-t border-gray-100">
-          <div className="flex items-center gap-3">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-100">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="flex-1 relative">
               <input
                 ref={inputRef}
@@ -516,7 +534,7 @@ const ChatSchedular = () => {
                 disabled={isTyping}
                 placeholder="Tell AI how you want to plan your day..."
                 aria-label="Chat message input"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all disabled:opacity-50"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all disabled:opacity-50"
               />
             </div>
             <button
@@ -541,7 +559,19 @@ const ChatSchedular = () => {
       </div>
 
       {/* Right Panel - Daily View */}
-      <aside className="w-80 bg-white px-5 py-5 overflow-y-auto shrink-0 flex flex-col" aria-label="Daily schedule">
+      <aside className={`${
+        showSidebar ? 'fixed inset-0 z-50 bg-white' : 'hidden'
+      } md:static md:block md:w-80 bg-white px-4 sm:px-5 py-4 sm:py-5 overflow-y-auto shrink-0 flex flex-col`} aria-label="Daily schedule">
+        {/* Mobile close button */}
+        <button
+          onClick={() => setShowSidebar(false)}
+          className="md:hidden self-end p-1.5 hover:bg-gray-100 rounded-lg mb-2 transition-colors"
+          aria-label="Close daily view"
+        >
+          <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div>
