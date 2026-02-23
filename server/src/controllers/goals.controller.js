@@ -267,6 +267,10 @@ export async function getAllGoals(req, res) {
 
       return {
         ...goal,
+        milestones: goal.milestones.map(m => ({
+          ...m,
+          taskCount: m._count?.tasks || 0,
+        })),
         progress,
         milestoneCount: totalMilestones,
         completedMilestoneCount: completedMilestones
