@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useGoalStore } from '../store/goalStore'
+import AIChat from '../components/UI/AIChat'
+import { goalApi } from '../services/api'
 
 const Goals = () => {
   // Navigation state: 'goals' | 'milestones' | 'tasks'
@@ -8,6 +10,15 @@ const Goals = () => {
   const [newGoalTitle, setNewGoalTitle] = useState('')
   const [newMilestoneTitle, setNewMilestoneTitle] = useState('')
   const [newTaskTitle, setNewTaskTitle] = useState('')
+
+  // AI Discussion state
+  const [aiObjective, setAiObjective] = useState('')
+  const [showChat, setShowChat] = useState(false)
+  const [chatMessages, setChatMessages] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [chatError, setChatError] = useState(null)
+  const [streamingContent, setStreamingContent] = useState('')
+  const [thinkingMode, setThinkingMode] = useState(true)
   
   // Zustand store
   const {
@@ -117,6 +128,114 @@ const Goals = () => {
     }
   }
 
+  // AI Discussion functions
+  const startGoalDiscussion = async () => {
+    if (!aiObjective.trim()) return
+
+    setShowChat(true)
+    setIsLoading(true)
+    setChatError(null)
+    setChatMessages([])
+    setStreamingContent('')
+
+    const userMessage = { 
+      role: 'user', 
+      content: `I want to achieve this goal: "${aiObjective}". Can you help me break it down into manageable subgoals?` 
+    }
+    setChatMessages([userMessage])
+
+    try {
+      const response = await goalApi.discuss(
+        { goal: aiObjective, conversationHistory: [], enableThinking: thinkingMode },
+        (chunk, fullContent) => {
+          setStreamingContent(fullContent)
+        }
+      )
+      setChatMessages([userMessage, { role: 'assistant', content: response.message }])
+      setStreamingContent('')
+    } catch (err) {
+      setChatError(err.message)
+      setChatMessages([
+        userMessage,
+        { role: 'error', content: `Sorry, I encountered an error: ${err.message}. Please make sure the server is running.` }
+      ])
+      setStreamingContent('')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSendMessage = async (message) => {
+    const newMessages = [...chatMessages, { role: 'user', content: message }]
+    setChatMessages(newMessages)
+    setIsLoading(true)
+    setChatError(null)
+    setStreamingContent('')
+
+    try {
+      const response = await goalApi.discuss(
+        {
+          goal: aiObjective,
+          conversationHistory: newMessages,
+          userMessage: message,
+          enableThinking: thinkingMode
+        },
+        (chunk, fullContent) => {
+          setStreamingContent(fullContent)
+        }
+      )
+      setChatMessages([...newMessages, { role: 'assistant', content: response.message }])
+      setStreamingContent('')
+    } catch (err) {
+      setChatError(err.message)
+      setChatMessages([
+        ...newMessages,
+        { role: 'error', content: `Sorry, I encountered an error: ${err.message}` }
+      ])
+      setStreamingContent('')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const applyAISuggestions = async () => {
+    if (chatMessages.length < 2) return
+
+    setIsLoading(true)
+    setChatError(null)
+
+    try {
+      const response = await goalApi.extractSubgoals({
+        goal: aiObjective,
+        conversationHistory: chatMessages
+      })
+
+      if (response.subgoals && response.subgoals.length > 0) {
+        for (const subgoal of response.subgoals) {
+          await createGoal({
+            title: subgoal.title,
+            description: subgoal.description || null,
+            targetDate: subgoal.estimatedDays ? new Date(Date.now() + subgoal.estimatedDays * 86400000).toISOString() : null,
+          })
+        }
+        await fetchGoals()
+        setShowChat(false)
+        setAiObjective('')
+      }
+    } catch (err) {
+      setChatError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const quickActions = [
+    "I have about 3 months for this",
+    "I can dedicate 2 hours daily",
+    "What should I prioritize first?",
+    "These look good, finalize them"
+  ]
+
   const priorityColors = {
     HIGH: 'bg-red-100 text-red-700',
     MEDIUM: 'bg-amber-100 text-amber-700',
@@ -135,7 +254,7 @@ const Goals = () => {
   return (
     <div className="flex h-full">
       {/* Main Content */}
-      <div className="flex-1 px-8 py-6 overflow-y-auto">
+      <div className={`flex-1 px-8 py-6 overflow-y-auto transition-all duration-300 ${showChat ? 'pr-4' : ''}`}>
         {/* Back Link */}
         <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors mb-4">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -157,6 +276,17 @@ const Goals = () => {
               {view === 'milestones' && 'Break down your goal into milestones.'}
               {view === 'tasks' && 'Add tasks to complete this milestone.'}
             </p>
+          </div>
+          <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-5 py-3">
+            <div>
+              <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">AI Powered</p>
+              <p className="text-lg font-extrabold text-indigo-700">Goal Coach</p>
+            </div>
+            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
           </div>
           <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-5 py-3">
             <div>
@@ -182,23 +312,74 @@ const Goals = () => {
         {/* GOALS VIEW */}
         {view === 'goals' && (
           <>
-            {/* Goal Input */}
-            <div className="mb-6 animate-slide-up stagger-1">
-              <label htmlFor="goal-input" className="block text-sm font-semibold text-gray-700 mb-2">What's your main goal?</label>
+            {/* AI Discussion Input */}
+            <div className="mb-8 animate-slide-up stagger-1">
+              <label htmlFor="ai-goal-input" className="block text-sm font-semibold text-gray-700 mb-2">What's your main goal?</label>
               <div className="flex gap-3">
                 <input
-                  id="goal-input"
+                  id="ai-goal-input"
+                  type="text"
+                  value={aiObjective}
+                  onChange={(e) => setAiObjective(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && startGoalDiscussion()}
+                  placeholder="e.g., Launch my SaaS MVP by Q3, Learn Spanish to conversational level..."
+                  className="flex-1 px-5 py-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
+                />
+                <button
+                  onClick={() => setThinkingMode(!thinkingMode)}
+                  title={thinkingMode ? "Thinking mode ON - AI will reason deeply" : "Thinking mode OFF - Faster responses"}
+                  className={`px-4 py-4 rounded-2xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 border-2 ${
+                    thinkingMode 
+                      ? 'bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100' 
+                      : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  <span className="hidden sm:inline">{thinkingMode ? 'Deep' : 'Fast'}</span>
+                </button>
+                <button
+                  onClick={startGoalDiscussion}
+                  disabled={!aiObjective.trim() || isLoading}
+                  className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Discuss with AI
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                AI will help you break down this goal into achievable subgoals through conversation.
+                {thinkingMode && <span className="text-purple-500 ml-1">(Deep thinking enabled)</span>}
+              </p>
+            </div>
+
+            {/* Divider */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex-1 h-px bg-gray-200"></div>
+              <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Or create manually</span>
+              <div className="flex-1 h-px bg-gray-200"></div>
+            </div>
+
+            {/* Manual Goal Input */}
+            <div className="mb-6 animate-slide-up stagger-2">
+              <label htmlFor="manual-goal-input" className="block text-sm font-semibold text-gray-700 mb-2">Create a goal manually</label>
+              <div className="flex gap-3">
+                <input
+                  id="manual-goal-input"
                   type="text"
                   value={newGoalTitle}
                   onChange={(e) => setNewGoalTitle(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreateGoal()}
-                  placeholder="e.g., Launch my SaaS MVP by Q3, Learn Spanish to conversational level..."
+                  placeholder="Enter goal title..."
                   className="flex-1 px-5 py-4 bg-white border border-gray-200 rounded-2xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 transition-all"
                 />
                 <button
                   onClick={handleCreateGoal}
                   disabled={!newGoalTitle.trim() || loading}
-                  className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-6 py-4 bg-white border border-gray-200 text-gray-700 rounded-2xl font-semibold text-sm hover:border-indigo-300 hover:text-indigo-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -206,9 +387,6 @@ const Goals = () => {
                   Create Goal
                 </button>
               </div>
-              <p className="text-xs text-gray-400 mt-2">
-                Create a goal and then click on it to add milestones and tasks.
-              </p>
             </div>
 
             {/* Goals List */}
@@ -563,6 +741,58 @@ const Goals = () => {
           </>
         )}
       </div>
+
+      {/* AI Chat Sidebar */}
+      {showChat && (
+        <div className="w-96 border-l border-gray-100 flex flex-col bg-gray-50 shrink-0">
+          <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
+            <h3 className="font-semibold text-gray-900">Goal Discussion</h3>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setThinkingMode(!thinkingMode)}
+                title={thinkingMode ? "Thinking mode ON - AI will reason deeply" : "Thinking mode OFF - Faster responses"}
+                className={`p-1.5 rounded-lg transition-all duration-300 flex items-center gap-1 ${
+                  thinkingMode 
+                    ? 'bg-purple-100 text-purple-600 hover:bg-purple-200' 
+                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <span className="text-[10px] font-medium">{thinkingMode ? 'Deep' : 'Fast'}</span>
+              </button>
+              <button
+                onClick={applyAISuggestions}
+                disabled={chatMessages.length < 2 || isLoading}
+                className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-semibold rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Apply Suggestions
+              </button>
+              <button
+                onClick={() => setShowChat(false)}
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-400"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <AIChat
+              messages={chatMessages}
+              onSendMessage={handleSendMessage}
+              isLoading={isLoading}
+              placeholder="Discuss your goal with AI..."
+              quickActions={quickActions}
+              title="Goal Coach"
+              subtitle="Helping you plan"
+              streamingContent={streamingContent}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
