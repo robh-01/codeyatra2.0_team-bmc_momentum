@@ -13,28 +13,26 @@ const FocusMode = () => {
   const [allDone, setAllDone] = useState(false)
   const intervalRef = useRef(null)
 
-  // Fetch tomorrow's tasks on mount
+  // Fetch today's tasks on mount
   useEffect(() => {
-    const fetchTomorrowTasks = async () => {
+    const fetchTodayTasks = async () => {
       try {
-        const tomorrow = new Date()
-        tomorrow.setDate(tomorrow.getDate() + 1)
-        const dateStr = tomorrow.toISOString().split('T')[0]
+        const today = new Date()
+        const dateStr = today.toISOString().split('T')[0]
         
         const plan = await dailyPlanApi.getDailyPlan(dateStr)
         if (plan && plan.tasks && plan.tasks.length > 0) {
           setTasks(plan.tasks)
           const mins = plan.tasks[0]?.estimatedMins || 25
           setTotalSeconds(mins * 60)
-          setIsRunning(true)
         }
       } catch (err) {
-        console.error('Error fetching tomorrow tasks:', err)
+        console.error('Error fetching today tasks:', err)
       } finally {
         setLoading(false)
       }
     }
-    fetchTomorrowTasks()
+    fetchTodayTasks()
   }, [])
 
   const currentTask = tasks[currentTaskIndex] || null
@@ -82,6 +80,19 @@ const FocusMode = () => {
     }
   }, [currentTaskIndex, tasks])
 
+  const selectTask = useCallback((index) => {
+    setCurrentTaskIndex(index)
+    const mins = tasks[index]?.estimatedMins || 25
+    setTotalSeconds(mins * 60)
+    setIsRunning(false)
+    setIsPaused(false)
+  }, [tasks])
+
+  const startTask = useCallback(() => {
+    setIsRunning(true)
+    setIsPaused(false)
+  }, [])
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -95,13 +106,66 @@ const FocusMode = () => {
   }, [togglePause])
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-indigo-50/30 to-purple-50/40 flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-indigo-50/30 to-purple-50/40 flex relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-indigo-100/30 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-100/30 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
 
-      {/* Top Bar */}
-      <header className="flex items-center justify-between px-6 py-4 relative z-10" role="banner">
+      {/* Task Sidebar - Left side, full height */}
+      <aside className="w-80 flex-shrink-0 bg-white border-r border-gray-100 flex flex-col">
+        <div className="p-6 border-b border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900">Today's Tasks</h3>
+          <p className="text-sm text-gray-400 mt-1">{tasks.length} tasks</p>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          {tasks.length === 0 ? (
+            <p className="text-sm text-gray-400">No tasks planned</p>
+          ) : (
+            <div className="space-y-2">
+              {tasks.map((task, index) => (
+                <button
+                  key={index}
+                  onClick={() => selectTask(index)}
+                  className={`w-full text-left p-4 rounded-xl transition-all ${
+                    index === currentTaskIndex 
+                      ? 'bg-indigo-50 border border-indigo-200' 
+                      : 'hover:bg-gray-50 border border-transparent'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                      index === currentTaskIndex ? 'bg-indigo-500 text-white' : 'bg-gray-200'
+                    }`}>
+                      {index < currentTaskIndex ? (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <span className="text-xs font-medium">{index + 1}</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${
+                        index === currentTaskIndex ? 'text-indigo-900' : 'text-gray-700'
+                      }`}>
+                        {task.title}
+                      </p>
+                      {task.estimatedMins && (
+                        <p className="text-xs text-gray-400 mt-1">{task.estimatedMins} min</p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col relative z-10">
+        {/* Top Bar */}
+        <header className="flex items-center justify-between px-6 py-4" role="banner">
         <button
           onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors"
@@ -112,12 +176,6 @@ const FocusMode = () => {
           </svg>
           Exit Focus
         </button>
-
-        <div className="px-4 py-1.5 bg-white border border-gray-200 rounded-full" role="status">
-          <span className="text-xs font-semibold text-gray-600 uppercase tracking-wider">
-            {tasks.length > 0 ? `Task ${currentTaskIndex + 1} of ${tasks.length}` : 'No tasks'}
-          </span>
-        </div>
 
         <div className="flex items-center gap-4">
           <button className="p-2 hover:bg-white/60 rounded-lg transition-colors text-gray-500 hover:text-gray-700" aria-label="Toggle ambient sound">
@@ -135,53 +193,52 @@ const FocusMode = () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center relative z-10 -mt-8">
-        {/* Task Info */}
-        <div className="text-center mb-10 animate-fade-in">
-          {loading ? (
-            <p className="text-sm text-gray-400">Loading tasks...</p>
-          ) : allDone ? (
-            <>
-              <p className="text-sm text-emerald-500 font-medium mb-2">All tasks completed!</p>
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight max-w-lg">
-                Great work today
-              </h1>
-              <p className="text-sm text-gray-500 mt-2">You've finished all {tasks.length} scheduled tasks.</p>
-            </>
-          ) : currentTask ? (
-            <>
-              <p className="text-sm text-gray-400 mb-1">
-                Task {currentTaskIndex + 1} of {tasks.length}
-              </p>
-              {currentTask.startTime && (
-                <p className="text-xs font-medium text-indigo-500 mb-3">
-                  {currentTask.startTime}{currentTask.endTime ? ` - ${currentTask.endTime}` : ''}
-                  {currentTask.estimatedMins && (
-                    <span className="text-gray-400 ml-2">({currentTask.estimatedMins} min)</span>
-                  )}
-                </p>
-              )}
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight max-w-lg">
-                {currentTask.title}
-              </h1>
-              {currentTask.description && (
-                <p className="text-sm text-gray-500 mt-2 max-w-md mx-auto">{currentTask.description}</p>
-              )}
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-gray-400 mb-2">No tasks planned for tomorrow</p>
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight max-w-lg">
-                Start a focus session
-              </h1>
-              <p className="text-sm text-gray-500 mt-2">Use the Chat Scheduler to plan your tomorrow's tasks</p>
-            </>
-           )}
-        </div>
+      {/* Main Content Area - no scroll */}
+      <main className="flex-1 flex items-center justify-center relative z-10 px-6 overflow-hidden">
+        {/* Timer Area */}
+        <div className="flex flex-col items-center justify-center py-8">
+          {/* Task Info */}
+          <div className="text-center mb-6 animate-fade-in">
+            {loading ? (
+              <p className="text-sm text-gray-400">Loading tasks...</p>
+            ) : allDone ? (
+              <>
+                <p className="text-sm text-emerald-500 font-medium mb-2">All tasks completed!</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
+                  Great work today
+                </h1>
+                <p className="text-sm text-gray-500 mt-2">You've finished all {tasks.length} scheduled tasks.</p>
+              </>
+            ) : currentTask ? (
+              <>
+                {currentTask.startTime && (
+                  <p className="text-xs font-medium text-indigo-500 mb-2">
+                    {currentTask.startTime}{currentTask.endTime ? ` - ${currentTask.endTime}` : ''}
+                    {currentTask.estimatedMins && (
+                      <span className="text-gray-400 ml-2">({currentTask.estimatedMins} min)</span>
+                    )}
+                  </p>
+                )}
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
+                  {currentTask.title}
+                </h1>
+                {currentTask.description && (
+                  <p className="text-sm text-gray-500 mt-2 max-w-md mx-auto">{currentTask.description}</p>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-gray-400 mb-2">No tasks planned for today</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
+                  Start a focus session
+                </h1>
+                <p className="text-sm text-gray-500 mt-2">Select a task to begin</p>
+              </>
+            )}
+          </div>
 
         {/* Timer Circle */}
-        <div className="relative w-72 h-72 sm:w-80 sm:h-80 mb-10" role="timer" aria-label={`${String(minutes).padStart(2, '0')} minutes and ${String(seconds).padStart(2, '0')} seconds remaining`}>
+        <div className="relative w-56 h-56 sm:w-64 sm:h-64 mb-6" role="timer" aria-label={`${String(minutes).padStart(2, '0')} minutes and ${String(seconds).padStart(2, '0')} seconds remaining`}>
           <svg className="w-full h-full -rotate-90" viewBox="0 0 300 300" aria-hidden="true">
             {/* Background circle */}
             <circle
@@ -216,10 +273,10 @@ const FocusMode = () => {
 
           {/* Center text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-6xl sm:text-7xl font-extrabold text-gray-900 tracking-tight tabular-nums" aria-live="off">
+            <span className="text-5xl sm:text-6xl font-extrabold text-gray-900 tracking-tight tabular-nums" aria-live="off">
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
             </span>
-            <div className="flex items-center gap-1.5 mt-2">
+            <div className="flex items-center gap-1.5 mt-1">
               <span className="text-sm" aria-hidden="true">✨</span>
               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
                 {isPaused ? 'Paused' : 'Focusing'}
@@ -229,12 +286,12 @@ const FocusMode = () => {
         </div>
 
         {/* Motivation text */}
-        <p className="text-sm text-gray-400 italic mb-6">
+        <p className="text-sm text-gray-400 italic mb-4">
           "Your focus determines your reality."
         </p>
 
         {/* Points indicator */}
-        <div className="flex items-center gap-1.5 mb-8">
+        <div className="flex items-center gap-1.5 mb-4">
           <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -243,30 +300,44 @@ const FocusMode = () => {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={togglePause}
-            aria-label={isPaused ? 'Resume focus session' : 'Pause focus session'}
-            className="flex items-center gap-2.5 px-7 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm active:translate-y-0 transition-all duration-200"
-          >
-            {isPaused ? (
-              <>
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-                Resume Flow
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 9v6m4-6v6" />
-                </svg>
-                Pause Flow
-              </>
-            )}
-          </button>
+          {!isRunning ? (
+            <button
+              onClick={startTask}
+              disabled={!currentTask}
+              aria-label="Start focus session"
+              className="flex items-center gap-2.5 px-8 py-3.5 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-2xl text-sm font-semibold shadow-lg shadow-indigo-200 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              Start Focus
+            </button>
+          ) : (
+            <button
+              onClick={togglePause}
+              aria-label={isPaused ? 'Resume focus session' : 'Pause focus session'}
+              className="flex items-center gap-2.5 px-7 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm active:translate-y-0 transition-all duration-200"
+            >
+              {isPaused ? (
+                <>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Resume Flow
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 9v6m4-6v6" />
+                  </svg>
+                  Pause Flow
+                </>
+              )}
+            </button>
+          )}
           <button
             onClick={completeTask}
-            disabled={allDone || !currentTask}
+            disabled={allDone || !currentTask || !isRunning}
             aria-label={currentTaskIndex < tasks.length - 1 ? 'Complete task and move to next' : 'Complete final task'}
             className="flex items-center gap-2.5 px-7 py-3.5 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-2xl text-sm font-semibold shadow-lg shadow-indigo-200 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
@@ -277,11 +348,10 @@ const FocusMode = () => {
           </button>
         </div>
 
-        {/* Keyboard hint */}
-        <p className="text-[11px] text-gray-300 mt-6 hidden sm:block">
-          Press <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-400 font-mono text-[10px]">Space</kbd> to {isPaused ? 'resume' : 'pause'}
-        </p>
-      </main>
+        </div>
+
+        </main>
+      </div>
     </div>
   )
 }

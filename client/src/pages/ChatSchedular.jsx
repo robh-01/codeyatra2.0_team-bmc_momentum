@@ -274,7 +274,12 @@ const ChatSchedular = () => {
   }
 
   const handleConfirmAndSave = async () => {
-    if (scheduledTasks.length === 0 || saving) return
+    if (saving) return
+
+    if (scheduledTasks.length === 0) {
+      showSaveStatus('error', 'No tasks to save. Create a schedule first.')
+      return
+    }
 
     setSaving(true)
     setSaveStatus(null)
@@ -670,7 +675,7 @@ const ChatSchedular = () => {
         <div className="mt-auto space-y-2">
           <button 
             onClick={handleConfirmAndSave}
-            disabled={scheduledTasks.length === 0 || saving}
+            disabled={saving}
             className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             {saving ? (
