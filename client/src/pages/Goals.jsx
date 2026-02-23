@@ -19,7 +19,7 @@ const Goals = () => {
   const [chatError, setChatError] = useState(null)
   const [streamingContent, setStreamingContent] = useState('')
   const [thinkingMode, setThinkingMode] = useState(true)
-  
+
   // Zustand store
   const {
     goals,
@@ -111,7 +111,7 @@ const Goals = () => {
     }
     const newStatus = statusCycle[task.status] || 'PENDING'
     await toggleTaskStatus(taskId, newStatus)
-    
+
     if (selectedGoal) {
       await fetchGoal(selectedGoal.id)
     }
@@ -138,9 +138,9 @@ const Goals = () => {
     setChatMessages([])
     setStreamingContent('')
 
-    const userMessage = { 
-      role: 'user', 
-      content: `I want to achieve this goal: "${aiObjective}". Can you help me break it down into manageable subgoals?` 
+    const userMessage = {
+      role: 'user',
+      content: `I want to achieve this goal: "${aiObjective}". Can you help me break it down into manageable subgoals?`
     }
     setChatMessages([userMessage])
 
@@ -280,12 +280,7 @@ const Goals = () => {
           <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-5 py-3">
             <div>
               <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">AI Powered</p>
-              <p className="text-lg font-extrabold text-indigo-700">Goal Coach</p>
-            </div>
-            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+              <p className="text-lg font-extrabold text-indigo-700">Guru</p>
             </div>
           </div>
           <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-5 py-3">
@@ -328,11 +323,10 @@ const Goals = () => {
                 <button
                   onClick={() => setThinkingMode(!thinkingMode)}
                   title={thinkingMode ? "Thinking mode ON - AI will reason deeply" : "Thinking mode OFF - Faster responses"}
-                  className={`px-4 py-4 rounded-2xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 border-2 ${
-                    thinkingMode 
-                      ? 'bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100' 
-                      : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-                  }`}
+                  className={`px-4 py-4 rounded-2xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 border-2 ${thinkingMode
+                    ? 'bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100'
+                    : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+                    }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -344,9 +338,6 @@ const Goals = () => {
                   disabled={!aiObjective.trim() || isLoading}
                   className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
                   Discuss with AI
                 </button>
               </div>
@@ -400,7 +391,7 @@ const Goals = () => {
                 </div>
               </div>
               <p className="text-sm text-gray-400 mb-5">
-                {goals.length === 0 
+                {goals.length === 0
                   ? "Enter a goal above to get started."
                   : "Click on a goal to view and manage its milestones."}
               </p>
@@ -438,8 +429,8 @@ const Goals = () => {
                           <span className="text-xs text-gray-400">{goal.milestoneCount || 0} milestones</span>
                           <div className="flex items-center gap-1">
                             <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-indigo-500 rounded-full transition-all duration-300" 
+                              <div
+                                className="h-full bg-indigo-500 rounded-full transition-all duration-300"
                                 style={{ width: `${goal.progress || 0}%` }}
                               />
                             </div>
@@ -520,7 +511,7 @@ const Goals = () => {
                 <span className="text-sm text-gray-400">{milestones.length} total</span>
               </div>
               <p className="text-sm text-gray-400 mb-5">
-                {milestones.length === 0 
+                {milestones.length === 0
                   ? "Add milestones to break down your goal."
                   : "Click on a milestone to view and manage its tasks."}
               </p>
@@ -557,8 +548,8 @@ const Goals = () => {
                           </span>
                           <div className="flex items-center gap-1">
                             <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-blue-500 rounded-full transition-all duration-300" 
+                              <div
+                                className="h-full bg-blue-500 rounded-full transition-all duration-300"
                                 style={{ width: `${milestone.progress || 0}%` }}
                               />
                             </div>
@@ -639,7 +630,7 @@ const Goals = () => {
                 <span className="text-sm text-gray-400">{tasks.length} total</span>
               </div>
               <p className="text-sm text-gray-400 mb-5">
-                {tasks.length === 0 
+                {tasks.length === 0
                   ? "Add tasks to complete this milestone."
                   : "Click the checkbox to cycle through task status: Pending -> In Progress -> Completed."}
               </p>
@@ -659,19 +650,17 @@ const Goals = () => {
                   {tasks.map((task) => (
                     <li
                       key={task.id}
-                      className={`flex items-center gap-4 px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-gray-200 transition-all duration-200 group ${
-                        task.status === 'COMPLETED' ? 'opacity-60' : ''
-                      }`}
+                      className={`flex items-center gap-4 px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-gray-200 transition-all duration-200 group ${task.status === 'COMPLETED' ? 'opacity-60' : ''
+                        }`}
                     >
                       <button
                         onClick={() => handleToggleTask(task.id)}
-                        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-200 shrink-0 ${
-                          task.status === 'COMPLETED'
-                            ? 'bg-emerald-500 border-emerald-500'
-                            : task.status === 'IN_PROGRESS'
+                        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-200 shrink-0 ${task.status === 'COMPLETED'
+                          ? 'bg-emerald-500 border-emerald-500'
+                          : task.status === 'IN_PROGRESS'
                             ? 'bg-amber-100 border-amber-400'
                             : 'border-gray-300 hover:border-indigo-400'
-                        }`}
+                          }`}
                       >
                         {task.status === 'COMPLETED' && (
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -751,11 +740,10 @@ const Goals = () => {
               <button
                 onClick={() => setThinkingMode(!thinkingMode)}
                 title={thinkingMode ? "Thinking mode ON - AI will reason deeply" : "Thinking mode OFF - Faster responses"}
-                className={`p-1.5 rounded-lg transition-all duration-300 flex items-center gap-1 ${
-                  thinkingMode 
-                    ? 'bg-purple-100 text-purple-600 hover:bg-purple-200' 
-                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                }`}
+                className={`p-1.5 rounded-lg transition-all duration-300 flex items-center gap-1 ${thinkingMode
+                  ? 'bg-purple-100 text-purple-600 hover:bg-purple-200'
+                  : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                  }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -786,7 +774,7 @@ const Goals = () => {
               isLoading={isLoading}
               placeholder="Discuss your goal with AI..."
               quickActions={quickActions}
-              title="Goal Coach"
+              title="Guru"
               subtitle="Helping you plan"
               streamingContent={streamingContent}
             />

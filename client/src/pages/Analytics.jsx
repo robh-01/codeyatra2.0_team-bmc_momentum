@@ -13,8 +13,11 @@ const Analytics = () => {
       positive: true,
       desc: 'Based on task complexity and completion speed',
       icon: (
-        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        <svg className="w-5 h-5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M7 20V6l5 6 5-6v14" />
+          <path d="M2 10h3" strokeWidth="1.5" strokeOpacity="0.7" />
+          <path d="M1 14h4" strokeWidth="1.5" strokeOpacity="0.9" />
+          <path d="M3 18h2" strokeWidth="1.5" strokeOpacity="0.5" />
         </svg>
       ),
       iconBg: 'bg-indigo-100',
@@ -69,8 +72,11 @@ const Analytics = () => {
   const aiInsights = [
     {
       icon: (
-        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        <svg className="w-5 h-5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M7 20V6l5 6 5-6v14" />
+          <path d="M2 10h3" strokeWidth="1.5" strokeOpacity="0.7" />
+          <path d="M1 14h4" strokeWidth="1.5" strokeOpacity="0.9" />
+          <path d="M3 18h2" strokeWidth="1.5" strokeOpacity="0.5" />
         </svg>
       ),
       iconBg: 'bg-indigo-100',
@@ -117,229 +123,284 @@ const Analytics = () => {
   ]
 
   return (
-    <div className="px-8 py-6 overflow-y-auto">
+    <div className="px-4 md:px-8 py-4 md:py-6 overflow-y-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6 animate-fade-in">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Performance Analytics</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Deep insights into your productivity, focus, and well-being.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex bg-gray-100 rounded-lg p-0.5" role="tablist" aria-label="Time range">
-            {ranges.map(r => (
-              <button
-                key={r}
-                onClick={() => setActiveRange(r)}
-                role="tab"
-                aria-selected={activeRange === r}
-                className={`px-3.5 py-1.5 rounded-md text-xs font-semibold capitalize transition-all duration-200 ${
-                  activeRange === r
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600" aria-label="Filter results">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-          </button>
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600" aria-label="Export report">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          </button>
+      <div className="mb-4 md:mb-6 animate-fade-in">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">Performance Analytics</h1>
+        <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">Deep insights into your productivity, focus, and well-being.</p>
+        
+        {/* Toggle */}
+        <div className="flex bg-gray-100 rounded-lg p-0.5 w-fit gap-px" role="tablist" aria-label="Time range">
+          {ranges.map(r => (
+            <button
+              key={r}
+              onClick={() => setActiveRange(r)}
+              role="tab"
+              aria-selected={activeRange === r}
+              className={`px-2 md:px-4 py-1 md:py-2 rounded-md text-xs md:text-sm font-semibold capitalize transition-all duration-200 ${
+                activeRange === r
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {r}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Score Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {scoreCards.map((card, i) => (
-          <article key={i} className="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md hover:border-gray-200 transition-all duration-300">
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-10 h-10 ${card.iconBg} rounded-xl flex items-center justify-center`}>
-                {card.icon}
-              </div>
-              <div className="flex items-center gap-1">
-                <svg className={`w-3.5 h-3.5 ${card.positive ? 'text-emerald-500' : 'text-red-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={card.positive ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"} />
-                </svg>
-                <span className={`text-xs font-semibold ${card.positive ? 'text-emerald-500' : 'text-red-400'}`}>{card.change}</span>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-6 md:mb-8">
+        {/* Productivity Score - Hero */}
+        <div className="md:col-span-2 lg:col-span-3 bg-white border-l-4 border-l-indigo-500 rounded-2xl p-4 md:p-6 hover:shadow-md hover:border-gray-200 transition-all duration-300">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <div className="w-10 md:w-12 h-10 md:h-12 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
+              {scoreCards[0].icon}
             </div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{card.label}</p>
-            <p className="text-3xl font-extrabold text-gray-900 mb-2">{card.value}</p>
-            <p className="text-[11px] text-gray-400 flex items-center gap-1">
-              <span aria-hidden="true">ⓘ</span> {card.desc}
-            </p>
-          </article>
-        ))}
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        {/* Activity Trends - takes 2 cols */}
-        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-1">
-            <div>
-              <h2 className="text-base font-bold text-gray-900">Activity Trends</h2>
-              <p className="text-xs text-gray-400">Completed tasks vs. Previous period</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full" aria-hidden="true"></span>
-                <span className="text-xs text-gray-500">This Week</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 bg-gray-300 rounded-full" aria-hidden="true"></span>
-                <span className="text-xs text-gray-500">Last Week</span>
-              </div>
+            <div className="flex items-center gap-1">
+              <svg className="w-3 md:w-4 h-3 md:h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              <span className="text-xs md:text-sm font-semibold text-emerald-500">{scoreCards[0].change}</span>
             </div>
           </div>
+          <p className="text-xs md:text-sm font-bold text-gray-500 uppercase tracking-wider mb-1 md:mb-2">{scoreCards[0].label}</p>
+          <p className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-2 md:mb-3">{scoreCards[0].value}</p>
+          <p className="text-xs md:text-sm text-gray-600">{scoreCards[0].desc}</p>
+        </div>
 
-          {/* Chart */}
-          <div className="mt-4 relative h-48" role="img" aria-label="Activity trends chart showing completed tasks this week versus last week. Thursday had the most tasks completed this week with 22.">
-            {/* Y axis labels */}
-            <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[11px] text-gray-400 w-8" aria-hidden="true">
-              <span>28</span>
-              <span>21</span>
-              <span>14</span>
-              <span>7</span>
-              <span>0</span>
+        {/* Credibility Score - Secondary */}
+        <div className="md:col-span-1 bg-white border-l-4 border-l-purple-500 rounded-2xl p-4 md:p-5 hover:shadow-md hover:border-gray-200 transition-all duration-300">
+          <div className="flex items-center justify-between mb-2 md:mb-3">
+            <div className="w-8 md:w-10 h-8 md:h-10 bg-purple-100 rounded-xl flex items-center justify-center shrink-0">
+              {scoreCards[1].icon}
             </div>
-            {/* Grid and chart area */}
-            <div className="ml-10 h-full relative">
-              {/* Horizontal grid lines */}
-              {[0, 1, 2, 3, 4].map(i => (
-                <div key={i} className="absolute left-0 right-0 border-t border-gray-100" style={{ top: `${(i / 4) * 100}%` }} aria-hidden="true"></div>
-              ))}
-              {/* SVG chart */}
-              <svg className="w-full h-full" viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden="true">
-                {/* Area fill for this week */}
-                <defs>
-                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6366f1" stopOpacity="0.15" />
-                    <stop offset="100%" stopColor="#6366f1" stopOpacity="0.01" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d={`M0,${180 - (thisWeek[0] / maxVal) * 170} ${thisWeek.map((v, i) => `L${(i / 6) * 600},${180 - (v / maxVal) * 170}`).join(' ')} L600,180 L0,180 Z`}
-                  fill="url(#areaGrad)"
-                />
-                {/* This week line */}
-                <polyline
-                  points={thisWeek.map((v, i) => `${(i / 6) * 600},${180 - (v / maxVal) * 170}`).join(' ')}
-                  fill="none"
-                  stroke="#6366f1"
-                  strokeWidth="2.5"
-                  strokeLinejoin="round"
-                />
-                {/* Last week dashed line */}
-                <polyline
-                  points={lastWeek.map((v, i) => `${(i / 6) * 600},${180 - (v / maxVal) * 170}`).join(' ')}
-                  fill="none"
-                  stroke="#d1d5db"
-                  strokeWidth="2"
-                  strokeDasharray="6,4"
-                  strokeLinejoin="round"
-                />
-                {/* Dots for this week */}
-                {thisWeek.map((v, i) => (
-                  <circle key={i} cx={(i / 6) * 600} cy={180 - (v / maxVal) * 170} r="3.5" fill="#6366f1" />
-                ))}
+            <div className="flex items-center gap-1">
+              <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
-              {/* X axis labels */}
-              <div className="flex justify-between mt-2 text-[11px] text-gray-400" aria-hidden="true">
-                {weekDays.map(d => <span key={d}>{d}</span>)}
-              </div>
+              <span className="text-xs font-semibold text-emerald-500">{scoreCards[1].change}</span>
+            </div>
+          </div>
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{scoreCards[1].label}</p>
+          <p className="text-xl md:text-2xl font-extrabold text-gray-900 mb-1 md:mb-2">{scoreCards[1].value}</p>
+          <p className="text-xs text-gray-600">{scoreCards[1].desc}</p>
+        </div>
+
+        {/* Burnout Risk - Pill */}
+        <div className="md:col-span-1 bg-amber-50 border-l-4 border-l-amber-500 rounded-2xl p-4 md:p-5 hover:shadow-md hover:border-gray-200 transition-all duration-300">
+          <div className="flex items-center justify-between mb-2 md:mb-3">
+            <div className="w-8 md:w-10 h-8 md:h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+              {scoreCards[2].icon}
+            </div>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 shrink-0">
+              Medium Risk
+            </span>
+          </div>
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{scoreCards[2].label}</p>
+          <p className="text-xs text-gray-600">High intensity detected in evening blocks</p>
+        </div>
+      </div>
+
+      {/* Activity Trends Chart */}
+      <div className="bg-white border border-gray-100 rounded-2xl p-5 mb-6">
+        <div className="flex items-center justify-between mb-1">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Activity Trends</h2>
+            <p className="text-sm text-gray-500">Completed tasks vs. Previous period</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full" aria-hidden="true"></span>
+              <span className="text-xs text-gray-500">This Week</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 bg-gray-300 rounded-full" aria-hidden="true"></span>
+              <span className="text-xs text-gray-500">Last Week</span>
             </div>
           </div>
         </div>
 
-        {/* Effort Allocation */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-5">
-          <h2 className="text-base font-bold text-gray-900 mb-0.5">Effort Allocation</h2>
-          <p className="text-xs text-gray-400 mb-5">Tasks by goal category</p>
+        {/* Chart */}
+        <div className="mt-4 relative h-36" role="img" aria-label="Activity trends chart showing completed tasks this week versus last week. Thursday had the most tasks completed this week with 22.">
+          {/* Y axis labels */}
+          <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-xs text-gray-400 w-8" aria-hidden="true">
+            <span>28</span>
+            <span>21</span>
+            <span>14</span>
+            <span>7</span>
+            <span>0</span>
+          </div>
+          {/* Grid and chart area */}
+          <div className="ml-10 h-full relative">
+            {/* Horizontal grid lines */}
+            {[0, 1, 2, 3, 4].map(i => (
+              <div key={i} className="absolute left-0 right-0 border-t border-gray-100" style={{ top: `${(i / 4) * 100}%` }} aria-hidden="true"></div>
+            ))}
+            {/* SVG chart */}
+            <svg className="w-full h-full" viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden="true">
+              {/* Area fill for this week */}
+              <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6366f1" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#6366f1" stopOpacity="0.01" />
+                </linearGradient>
+              </defs>
+              <path
+                d={`M0,${180 - (thisWeek[0] / maxVal) * 170} ${thisWeek.map((v, i) => `L${(i / 6) * 600},${180 - (v / maxVal) * 170}`).join(' ')} L600,180 L0,180 Z`}
+                fill="url(#areaGrad)"
+              />
+              {/* This week line */}
+              <polyline
+                points={thisWeek.map((v, i) => `${(i / 6) * 600},${180 - (v / maxVal) * 170}`).join(' ')}
+                fill="none"
+                stroke="#6366f1"
+                strokeWidth="2.5"
+                strokeLinejoin="round"
+              />
+              {/* Last week dashed line */}
+              <polyline
+                points={lastWeek.map((v, i) => `${(i / 6) * 600},${180 - (v / maxVal) * 170}`).join(' ')}
+                fill="none"
+                stroke="#d1d5db"
+                strokeWidth="2"
+                strokeDasharray="6,4"
+                strokeLinejoin="round"
+              />
+              {/* Dots for this week */}
+              {thisWeek.map((v, i) => (
+                <circle key={i} cx={(i / 6) * 600} cy={180 - (v / maxVal) * 170} r="3.5" fill="#6366f1" />
+              ))}
+              {/* Peak day annotation */}
+              <circle cx={(3 / 6) * 600} cy={180 - (22 / maxVal) * 170} r="6" fill="#ef4444" stroke="#ffffff" strokeWidth="2" />
+              <text x={(3 / 6) * 600 + 10} y={180 - (22 / maxVal) * 170 - 10} fill="#374151" fontSize="12" fontWeight="bold">Peak Day — 22 tasks</text>
+            </svg>
+            {/* X axis labels */}
+            <div className="flex justify-between mt-2 text-xs text-gray-400" aria-hidden="true">
+              {weekDays.map(d => <span key={d}>{d}</span>)}
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <div className="space-y-4 mb-6">
-            {effortData.map((item, i) => (
-              <div key={i}>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500 w-14 text-right shrink-0">{item.label}</span>
-                  <div className="flex-1 h-7 bg-gray-100 rounded-md overflow-hidden" role="progressbar" aria-valuenow={item.pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${item.label}: ${item.pct}%`}>
-                    <div
-                      className={`h-full ${item.color} rounded-md transition-all duration-500`}
-                      style={{ width: `${item.pct}%` }}
-                    ></div>
-                  </div>
+      {/* Effort Allocation - Full Width */}
+      <div className="bg-white border border-gray-100 rounded-2xl p-4 md:p-6 mb-4 md:mb-6">
+        <h2 className="text-base md:text-lg font-bold text-gray-900 mb-1">Effort Allocation</h2>
+        <p className="text-xs md:text-sm text-gray-500 mb-4 md:mb-6">Tasks by goal category this week</p>
+
+        <div className="space-y-3 md:space-y-5">
+          {effortData.map((item, i) => (
+            <div key={i} className="flex items-center gap-3 md:gap-4">
+              <span className="text-xs md:text-sm font-medium text-gray-700 w-14 md:w-16 text-left shrink-0">{item.label}</span>
+              <div className="flex-1 h-6 md:h-8 bg-gray-100 rounded-lg overflow-hidden relative" role="progressbar" aria-valuenow={item.pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${item.label}: ${item.pct}%`}>
+                <div
+                  className={`h-full ${item.color} rounded-lg transition-all duration-500 flex items-center justify-end pr-2`}
+                  style={{ width: `${item.pct}%` }}
+                >
+                  <span className="text-xs font-bold text-white">{item.pct}%</span>
                 </div>
               </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-2 gap-y-2.5 gap-x-4">
-            {effortLegend.map((item, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${item.color}`} aria-hidden="true"></span>
-                <span className="text-xs text-gray-600">{item.label}</span>
-                <span className="text-xs font-semibold text-gray-800 ml-auto">{item.pct}</span>
+              <div className="flex items-center gap-1 w-10 md:w-12 justify-end shrink-0">
+                <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+                <span className="text-xs font-semibold text-emerald-600">+5%</span>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* AI Intelligence Report */}
-      <section className="bg-white border border-gray-100 rounded-2xl p-6 mb-6" aria-labelledby="ai-report-heading">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      {/* AI Insights */}
+      <section className="bg-gray-50 border border-gray-200 rounded-2xl p-4 md:p-6 mb-4 md:mb-6" aria-labelledby="ai-insights-heading">
+        <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6 flex-wrap">
+          <div className="w-9 md:w-10 h-9 md:h-10 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
+            <svg className="w-4 md:w-5 h-4 md:h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
           </div>
           <div>
-            <h2 id="ai-report-heading" className="text-base font-bold text-gray-900">AI Intelligence Report</h2>
-            <p className="text-xs text-indigo-600 font-medium">Strategic adjustments for next week</p>
+            <h2 id="ai-insights-heading" className="text-base md:text-lg font-bold text-gray-900">AI Insights</h2>
+            <p className="text-xs md:text-sm text-indigo-600 font-medium">Strategic adjustments for next week</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-          {aiInsights.map((insight, i) => (
-            <article key={i} className="bg-gray-50 border border-gray-100 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <div className={`w-8 h-8 ${insight.iconBg} rounded-lg flex items-center justify-center shrink-0`}>
-                  {insight.icon}
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-800 mb-1">{insight.title}</p>
-                  <p className="text-xs text-gray-500 leading-relaxed">{insight.desc}</p>
-                </div>
+        {/* Peak Focus Optimization - Full Width */}
+        <article className="bg-blue-50 border border-blue-200 rounded-xl p-3 md:p-5 mb-3 md:mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 md:w-10 h-9 md:h-10 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                {aiInsights[0].icon}
               </div>
-            </article>
-          ))}
-        </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm md:text-lg font-bold text-gray-900 mb-1 md:mb-2">{aiInsights[0].title}</h3>
+                <p className="text-xs md:text-sm text-gray-700 leading-relaxed mb-2 md:mb-3">{aiInsights[0].desc}</p>
+              </div>
+            </div>
+            <button className="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm px-3 md:px-4 py-2 rounded-lg transition-colors shrink-0 w-full sm:w-auto">
+              Apply
+            </button>
+          </div>
+        </article>
 
-        <div className="text-right">
-          <button className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1 transition-colors">
-            Apply AI-Optimized Schedule
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </button>
+        {/* Other Insights - Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
+          {aiInsights.slice(1).map((insight, i) => {
+            const colors = [
+              { bg: 'bg-amber-50', border: 'border-amber-200', btn: 'bg-amber-600 hover:bg-amber-700', iconBg: 'bg-amber-100' },
+              { bg: 'bg-emerald-50', border: 'border-emerald-200', btn: 'bg-emerald-600 hover:bg-emerald-700', iconBg: 'bg-emerald-100' },
+              { bg: 'bg-purple-50', border: 'border-purple-200', btn: 'bg-purple-600 hover:bg-purple-700', iconBg: 'bg-purple-100' }
+            ]
+            const colorScheme = colors[i]
+
+            return (
+              <article key={i} className={`${colorScheme.bg} border ${colorScheme.border} rounded-xl p-3 md:p-4`}>
+                <div className="flex items-start justify-between mb-2 md:mb-3">
+                  <div className={`w-8 h-8 ${colorScheme.iconBg} rounded-lg flex items-center justify-center shrink-0`}>
+                    {insight.icon}
+                  </div>
+                  <button className={`${colorScheme.btn} text-white text-xs px-2 md:px-3 py-1 rounded transition-colors shrink-0`}>
+                    View
+                  </button>
+                </div>
+                <h4 className="text-xs md:text-sm font-bold text-gray-900 mb-1 md:mb-2">{insight.title}</h4>
+                <p className="text-xs text-gray-700 leading-relaxed">{insight.desc}</p>
+              </article>
+            )
+          })}
         </div>
       </section>
 
+      {/* Bottom CTA and Timestamp */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-gray-200 rounded-2xl p-4 md:p-6 mb-4">
+        <div className="flex items-start sm:items-center gap-2 md:gap-3 min-w-0">
+          <div className="w-9 md:w-10 h-9 md:h-10 bg-indigo-100 rounded-xl flex items-center justify-center shrink-0">
+            <svg className="w-4 md:w-5 h-4 md:h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs md:text-sm font-medium text-gray-900">Ready to boost your productivity?</p>
+            <p className="text-xs text-gray-500">Apply these insights to your schedule</p>
+          </div>
+        </div>
+        <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 md:px-6 py-2 md:py-3 rounded-xl transition-colors w-full sm:w-auto">
+          Optimize Schedule
+        </button>
+      </div>
+
+      <div className="text-center mb-4 md:mb-6">
+        <p className="text-xs text-gray-400">Last updated: {new Date().toLocaleString()}</p>
+      </div>
+
       {/* Bottom Stats Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-4 mb-4">
         {bottomStats.map((stat, i) => (
-          <div key={i} className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-center gap-3">
-            <span className="text-lg" aria-hidden="true">{stat.icon}</span>
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</p>
-              <p className="text-xl font-extrabold text-gray-900">{stat.value}</p>
+          <div key={i} className="bg-white border border-gray-100 rounded-2xl px-3 md:px-5 py-3 md:py-4 flex items-center gap-2 md:gap-3">
+            <span className="text-lg shrink-0" aria-hidden="true">{stat.icon}</span>
+            <div className="min-w-0">
+              <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate">{stat.label}</p>
+              <p className="text-lg md:text-xl font-extrabold text-gray-900 truncate">{stat.value}</p>
             </div>
           </div>
         ))}

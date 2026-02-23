@@ -38,8 +38,11 @@ const DashboardLayout = () => {
     },
     {
       label: 'Focus Mode', path: '/focus', icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M7 20V6l5 6 5-6v14" />
+          <path d="M2 10h3" strokeWidth="1.5" strokeOpacity="0.7" />
+          <path d="M1 14h4" strokeWidth="1.5" strokeOpacity="0.9" />
+          <path d="M3 18h2" strokeWidth="1.5" strokeOpacity="0.5" />
         </svg>
       )
     },
@@ -97,8 +100,11 @@ const DashboardLayout = () => {
             aria-label="Scroll to top"
           >
             <div className="w-9 h-9 bg-linear-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md shadow-indigo-200/50 shrink-0 group-hover:scale-110 transition-transform">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M7 20V6l5 6 5-6v14" />
+                <path d="M2 10h3" strokeWidth="1.5" strokeOpacity="0.7" />
+                <path d="M1 14h4" strokeWidth="1.5" strokeOpacity="0.9" />
+                <path d="M3 18h2" strokeWidth="1.5" strokeOpacity="0.5" />
               </svg>
             </div>
             {!sidebarCollapsed && (

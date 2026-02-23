@@ -146,7 +146,6 @@ const FocusMode = () => {
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
             </span>
             <div className="flex items-center gap-1.5 mt-2">
-              <span className="text-sm" aria-hidden="true">✨</span>
               <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
                 {isPaused ? 'Paused' : 'Focusing'}
               </span>

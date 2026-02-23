@@ -1,6 +1,46 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { planningApi } from '../services/api'
 
+// MargaDarshak robot icon - cute robot face with glowing cyan eyes
+const MargaDarshakIcon = ({ size = 'sm' }) => {
+  const dims = size === 'lg' ? 'w-6 h-6' : size === 'md' ? 'w-5 h-5' : 'w-4 h-4'
+  return (
+    <svg className={dims} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Outer metallic ring */}
+      <circle cx="50" cy="50" r="48" fill="url(#ringGrad)" />
+      {/* Dark face area */}
+      <circle cx="50" cy="50" r="40" fill="url(#faceGrad)" />
+      {/* Blue rim light */}
+      <circle cx="50" cy="50" r="40" fill="none" stroke="url(#rimGrad)" strokeWidth="2" />
+      {/* Left eye glow */}
+      <circle cx="35" cy="42" r="9" fill="#00e5ff" opacity="0.3" />
+      <circle cx="35" cy="42" r="6" fill="#00e5ff" />
+      <circle cx="35" cy="42" r="3" fill="#ffffff" opacity="0.8" />
+      {/* Right eye glow */}
+      <circle cx="65" cy="42" r="9" fill="#00e5ff" opacity="0.3" />
+      <circle cx="65" cy="42" r="6" fill="#00e5ff" />
+      <circle cx="65" cy="42" r="3" fill="#ffffff" opacity="0.8" />
+      {/* Smile */}
+      <path d="M38 60 Q50 70 62 60" stroke="#00e5ff" strokeWidth="3" strokeLinecap="round" fill="none" />
+      <defs>
+        <linearGradient id="ringGrad" x1="0" y1="0" x2="100" y2="100">
+          <stop offset="0%" stopColor="#4a5568" />
+          <stop offset="100%" stopColor="#2d3748" />
+        </linearGradient>
+        <radialGradient id="faceGrad" cx="50%" cy="40%" r="50%">
+          <stop offset="0%" stopColor="#1a2332" />
+          <stop offset="100%" stopColor="#0d1117" />
+        </radialGradient>
+        <linearGradient id="rimGrad" x1="0" y1="0" x2="100" y2="100">
+          <stop offset="0%" stopColor="#63b3ed" />
+          <stop offset="50%" stopColor="#00e5ff" />
+          <stop offset="100%" stopColor="#63b3ed" />
+        </linearGradient>
+      </defs>
+    </svg>
+  )
+}
+
 const ChatSchedular = () => {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -134,14 +174,14 @@ const ChatSchedular = () => {
 
     try {
       // Check if user wants to finalize
-      const isFinalize = messageText.toLowerCase().includes('finalize') || 
-                         messageText.toLowerCase().includes('looks good') ||
-                         messageText.toLowerCase().includes('confirm')
+      const isFinalize = messageText.toLowerCase().includes('finalize') ||
+        messageText.toLowerCase().includes('looks good') ||
+        messageText.toLowerCase().includes('confirm')
 
       if (isFinalize && messages.length >= 2) {
         // Try to extract the schedule (non-streaming JSON endpoint)
         const response = await planningApi.finalize({ conversationHistory: newMessages })
-        
+
         if (response.schedule && response.schedule.length > 0) {
           setScheduledTasks(response.schedule)
           calculateStats(response.schedule)
@@ -257,13 +297,11 @@ const ChatSchedular = () => {
         {/* Chat Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between" role="banner">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm shadow-indigo-200">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shadow-cyan-200 overflow-hidden" aria-hidden="true">
+              <MargaDarshakIcon size="lg" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-gray-900">Daily Planner AI</h1>
+              <h1 className="text-sm font-bold text-gray-900">MargaDarshak</h1>
               <div className="flex items-center gap-1.5">
                 <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
                   <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isTyping ? 'bg-amber-400' : 'bg-emerald-400'} opacity-75`}></span>
@@ -277,23 +315,22 @@ const ChatSchedular = () => {
           </div>
           <div className="flex items-center gap-2">
             {/* Thinking Mode Toggle */}
-            <button 
+            <button
               onClick={() => setThinkingMode(!thinkingMode)}
               title={thinkingMode ? "Thinking mode ON - AI will reason deeply" : "Thinking mode OFF - Faster responses"}
-              className={`p-2 rounded-lg transition-all duration-300 flex items-center gap-1.5 ${
-                thinkingMode 
-                  ? 'bg-purple-100 text-purple-600 hover:bg-purple-200' 
-                  : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-              }`}
+              className={`p-2 rounded-lg transition-all duration-300 flex items-center gap-1.5 ${thinkingMode
+                ? 'bg-purple-100 text-purple-600 hover:bg-purple-200'
+                : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
               <span className="text-xs font-medium hidden sm:inline">{thinkingMode ? 'Deep' : 'Fast'}</span>
             </button>
-            <button 
+            <button
               onClick={resetChat}
-              className="p-2 hover:bg-gray-50 rounded-lg transition-colors" 
+              className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
               aria-label="Reset chat"
               title="Start over"
             >
@@ -318,19 +355,16 @@ const ChatSchedular = () => {
               <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`flex gap-3 max-w-[75%] ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
                   {(message.role === 'assistant' || message.role === 'error') && (
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm ${
-                      message.role === 'error'
-                        ? 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-200'
-                        : 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-200'
-                    }`} aria-hidden="true">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm overflow-hidden ${message.role === 'error'
+                      ? 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-200'
+                      : 'shadow-cyan-200'
+                      }`} aria-hidden="true">
                       {message.role === 'error' ? (
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
                       ) : (
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
+                        <MargaDarshakIcon size="sm" />
                       )}
                     </div>
                   )}
@@ -345,11 +379,10 @@ const ChatSchedular = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-line ${
-                        message.role === 'assistant'
-                          ? 'bg-gray-50 border border-gray-100 text-gray-700 rounded-tl-md'
-                          : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-tr-md shadow-md shadow-indigo-200'
-                      }`}>
+                      <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-line ${message.role === 'assistant'
+                        ? 'bg-gray-50 border border-gray-100 text-gray-700 rounded-tl-md'
+                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-tr-md shadow-md shadow-indigo-200'
+                        }`}>
                         {message.content}
                       </div>
                     )}
@@ -363,10 +396,8 @@ const ChatSchedular = () => {
           {isTyping && streamingContent && (
             <div className="flex justify-start" role="status" aria-label="AI is responding">
               <div className="flex gap-3 max-w-[75%]">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200" aria-hidden="true">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm shadow-cyan-200 overflow-hidden" aria-hidden="true">
+                  <MargaDarshakIcon size="sm" />
                 </div>
                 <div className="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl rounded-tl-md text-sm leading-relaxed whitespace-pre-line text-gray-700">
                   {streamingContent}
@@ -380,10 +411,8 @@ const ChatSchedular = () => {
           {isTyping && !streamingContent && (
             <div className="flex justify-start" role="status" aria-label="AI is typing">
               <div className="flex gap-3 max-w-[75%]">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200" aria-hidden="true">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm shadow-cyan-200 overflow-hidden" aria-hidden="true">
+                  <MargaDarshakIcon size="sm" />
                 </div>
                 <div className="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl rounded-tl-md">
                   <div className="flex gap-1.5 items-center h-5">
@@ -434,11 +463,10 @@ const ChatSchedular = () => {
               onClick={() => handleSend()}
               disabled={!input.trim() || isTyping}
               aria-label="Send message"
-              className={`p-3 rounded-xl transition-all duration-300 shrink-0 ${
-                input.trim() && !isTyping
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
-                  : 'bg-indigo-100 text-indigo-400 cursor-not-allowed'
-              }`}
+              className={`p-3 rounded-xl transition-all duration-300 shrink-0 ${input.trim() && !isTyping
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
+                : 'bg-indigo-100 text-indigo-400 cursor-not-allowed'
+                }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -459,11 +487,10 @@ const ChatSchedular = () => {
             <h2 className="text-lg font-bold text-gray-900">Tomorrow's Plan</h2>
             <p className="text-xs text-gray-400">{formatDate()}</p>
           </div>
-          <span className={`px-3 py-1 rounded-lg text-[11px] font-semibold ${
-            scheduledTasks.length > 0 
-              ? 'bg-emerald-100 text-emerald-700' 
-              : 'bg-gray-100 text-gray-600'
-          }`}>
+          <span className={`px-3 py-1 rounded-lg text-[11px] font-semibold ${scheduledTasks.length > 0
+            ? 'bg-emerald-100 text-emerald-700'
+            : 'bg-gray-100 text-gray-600'
+            }`}>
             {scheduledTasks.length > 0 ? 'Ready' : 'Drafting'}
           </span>
         </div>
@@ -496,7 +523,7 @@ const ChatSchedular = () => {
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Scheduled Tasks</h3>
             <span className="text-xs text-gray-400">{scheduledTasks.length} tasks</span>
           </div>
-          
+
           {scheduledTasks.length === 0 ? (
             <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
               <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -519,11 +546,10 @@ const ChatSchedular = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold text-gray-500">{task.time}</span>
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
-                        task.priority === 'high' ? 'bg-red-100 text-red-600' :
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${task.priority === 'high' ? 'bg-red-100 text-red-600' :
                         task.priority === 'medium' ? 'bg-amber-100 text-amber-600' :
-                        'bg-emerald-100 text-emerald-600'
-                      }`}>
+                          'bg-emerald-100 text-emerald-600'
+                        }`}>
                         {task.priority || 'medium'}
                       </span>
                     </div>
@@ -540,10 +566,8 @@ const ChatSchedular = () => {
         {scheduledTasks.length > 0 && (
           <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-6">
             <div className="flex items-start gap-2.5">
-              <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center shrink-0">
-                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+                <MargaDarshakIcon size="sm" />
               </div>
               <div>
                 <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-1">AI Insight</p>
@@ -557,7 +581,7 @@ const ChatSchedular = () => {
 
         {/* Action Buttons */}
         <div className="mt-auto space-y-2">
-          <button 
+          <button
             disabled={scheduledTasks.length === 0}
             className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
@@ -566,7 +590,7 @@ const ChatSchedular = () => {
             </svg>
             Confirm & Sync to Calendar
           </button>
-          <button 
+          <button
             onClick={resetChat}
             className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors text-center"
           >
