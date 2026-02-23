@@ -1,70 +1,199 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 
 const Analytics = () => {
   const [activeRange, setActiveRange] = useState('weekly')
 
   const ranges = ['daily', 'weekly', 'monthly']
 
-  const scoreCards = [
-    {
-      label: 'PRODUCTIVITY SCORE',
-      value: '88',
-      change: '+8%',
-      positive: true,
-      desc: 'Based on task complexity and completion speed',
-      icon: (
-        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      ),
-      iconBg: 'bg-indigo-100',
-    },
-    {
-      label: 'CREDIBILITY SCORE',
-      value: '94%',
-      change: '+2.4%',
-      positive: true,
-      desc: 'Measures how often you complete planned tasks',
-      icon: (
-        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      iconBg: 'bg-purple-100',
-    },
-    {
-      label: 'BURNOUT RISK',
-      value: 'Medium',
-      change: '~12%',
-      positive: false,
-      desc: 'High intensity detected in evening blocks',
-      icon: (
-        <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-        </svg>
-      ),
-      iconBg: 'bg-amber-100',
-    },
-  ]
+  const getDataForRange = (range) => {
+    switch (range) {
+      case 'daily':
+        return {
+          scoreCards: [
+            {
+              label: 'PRODUCTIVITY SCORE',
+              value: '92',
+              change: '+12%',
+              positive: true,
+              desc: 'Based on task complexity and completion speed',
+            },
+            {
+              label: 'CREDIBILITY SCORE',
+              value: '100%',
+              change: '+5%',
+              positive: true,
+              desc: 'Measures how often you complete planned tasks',
+            },
+            {
+              label: 'BURNOUT RISK',
+              value: 'Low',
+              change: '-8%',
+              positive: true,
+              desc: 'Good balance of rest and work today',
+            },
+          ],
+          chartData: {
+            labels: ['6AM', '8AM', '10AM', '12PM', '2PM', '4PM', '6PM', '8PM'],
+            current: [2, 4, 6, 3, 5, 4, 2, 1],
+            previous: [1, 3, 4, 2, 3, 2, 1, 0],
+            maxVal: 8,
+          },
+          effortData: [
+            { label: 'Work', pct: 55, color: 'bg-indigo-500' },
+            { label: 'Health', pct: 15, color: 'bg-orange-400' },
+            { label: 'Learning', pct: 20, color: 'bg-purple-500' },
+            { label: 'Social', pct: 10, color: 'bg-rose-400' },
+          ],
+          effortLegend: [
+            { label: 'Work', pct: '55%', color: 'bg-indigo-600' },
+            { label: 'Health', pct: '15%', color: 'bg-orange-400' },
+            { label: 'Learning', pct: '20%', color: 'bg-purple-500' },
+            { label: 'Social', pct: '10%', color: 'bg-rose-400' },
+          ],
+          bottomStats: [
+            { icon: '⏱️', label: 'FOCUS TIME', value: '4.5h' },
+            { icon: '✅', label: 'TASKS DONE', value: '12' },
+            { icon: '🔥', label: 'CURRENT STREAK', value: '3 days' },
+            { icon: '🎯', label: 'GOALS MET', value: '2/3' },
+          ],
+          chartTitle: 'Hourly Activity',
+          chartSubtitle: 'Completed tasks by hour today',
+        }
+      case 'weekly':
+        return {
+          scoreCards: [
+            {
+              label: 'PRODUCTIVITY SCORE',
+              value: '88',
+              change: '+8%',
+              positive: true,
+              desc: 'Based on task complexity and completion speed',
+            },
+            {
+              label: 'CREDIBILITY SCORE',
+              value: '94%',
+              change: '+2.4%',
+              positive: true,
+              desc: 'Measures how often you complete planned tasks',
+            },
+            {
+              label: 'BURNOUT RISK',
+              value: 'Medium',
+              change: '~12%',
+              positive: false,
+              desc: 'High intensity detected in evening blocks',
+            },
+          ],
+          chartData: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            current: [10, 14, 18, 22, 20, 14, 8],
+            previous: [8, 12, 15, 14, 16, 12, 10],
+            maxVal: 28,
+          },
+          effortData: [
+            { label: 'Work', pct: 45, color: 'bg-indigo-500' },
+            { label: 'Health', pct: 20, color: 'bg-orange-400' },
+            { label: 'Learning', pct: 25, color: 'bg-purple-500' },
+            { label: 'Social', pct: 10, color: 'bg-rose-400' },
+          ],
+          effortLegend: [
+            { label: 'Work', pct: '45%', color: 'bg-indigo-600' },
+            { label: 'Health', pct: '20%', color: 'bg-orange-400' },
+            { label: 'Learning', pct: '25%', color: 'bg-purple-500' },
+            { label: 'Social', pct: '10%', color: 'bg-rose-400' },
+          ],
+          bottomStats: [
+            { icon: '⏱️', label: 'FOCUS TIME', value: '32.5h' },
+            { icon: '✅', label: 'TASKS DONE', value: '142' },
+            { icon: '🔥', label: 'AVG. STREAK', value: '8 days' },
+            { icon: '🎯', label: 'GOALS MET', value: '4/5' },
+          ],
+          chartTitle: 'Activity Trends',
+          chartSubtitle: 'Completed tasks vs. Previous period',
+        }
+      case 'monthly':
+        return {
+          scoreCards: [
+            {
+              label: 'PRODUCTIVITY SCORE',
+              value: '76',
+              change: '-3%',
+              positive: false,
+              desc: 'Based on task complexity and completion speed',
+            },
+            {
+              label: 'CREDIBILITY SCORE',
+              value: '82%',
+              change: '-5%',
+              positive: false,
+              desc: 'Measures how often you complete planned tasks',
+            },
+            {
+              label: 'BURNOUT RISK',
+              value: 'High',
+              change: '+15%',
+              positive: false,
+              desc: 'Sustained high intensity over the month',
+            },
+          ],
+          chartData: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            current: [45, 52, 38, 48],
+            previous: [40, 48, 42, 35],
+            maxVal: 60,
+          },
+          effortData: [
+            { label: 'Work', pct: 50, color: 'bg-indigo-500' },
+            { label: 'Health', pct: 15, color: 'bg-orange-400' },
+            { label: 'Learning', pct: 20, color: 'bg-purple-500' },
+            { label: 'Social', pct: 15, color: 'bg-rose-400' },
+          ],
+          effortLegend: [
+            { label: 'Work', pct: '50%', color: 'bg-indigo-600' },
+            { label: 'Health', pct: '15%', color: 'bg-orange-400' },
+            { label: 'Learning', pct: '20%', color: 'bg-purple-500' },
+            { label: 'Social', pct: '15%', color: 'bg-rose-400' },
+          ],
+          bottomStats: [
+            { icon: '⏱️', label: 'FOCUS TIME', value: '156h' },
+            { icon: '✅', label: 'TASKS DONE', value: '624' },
+            { icon: '🔥', label: 'LONGEST STREAK', value: '14 days' },
+            { icon: '🎯', label: 'GOALS MET', value: '3/5' },
+          ],
+          chartTitle: 'Monthly Overview',
+          chartSubtitle: 'Completed tasks by week',
+        }
+      default:
+        return {}
+    }
+  }
 
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  const thisWeek = [10, 14, 18, 22, 20, 14, 8]
-  const lastWeek = [8, 12, 15, 14, 16, 12, 10]
-  const maxVal = 28
+  const data = useMemo(() => getDataForRange(activeRange), [activeRange])
+  const { scoreCards, chartData, effortData, effortLegend, bottomStats, chartTitle, chartSubtitle } = data
 
-  const effortData = [
-    { label: 'Work', pct: 45, color: 'bg-indigo-500' },
-    { label: 'Health', pct: 20, color: 'bg-indigo-400' },
-    { label: 'Learning', pct: 25, color: 'bg-indigo-500' },
-    { label: 'Social', pct: 10, color: 'bg-indigo-300' },
-  ]
+  const iconMap = {
+    productivity: (
+      <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+    credibility: (
+      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    burnout: (
+      <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+      </svg>
+    ),
+  }
 
-  const effortLegend = [
-    { label: 'Work', pct: '45%', color: 'bg-indigo-600' },
-    { label: 'Health', pct: '20%', color: 'bg-orange-400' },
-    { label: 'Learning', pct: '25%', color: 'bg-purple-500' },
-    { label: 'Social', pct: '10%', color: 'bg-rose-400' },
-  ]
+  const iconBgMap = {
+    productivity: 'bg-indigo-100',
+    credibility: 'bg-purple-100',
+    burnout: 'bg-amber-100',
+  }
 
   const aiInsights = [
     {
@@ -109,13 +238,6 @@ const Analytics = () => {
     },
   ]
 
-  const bottomStats = [
-    { icon: '⏱️', label: 'FOCUS TIME', value: '32.5h' },
-    { icon: '✅', label: 'TASKS DONE', value: '142' },
-    { icon: '🔥', label: 'AVG. STREAK', value: '8 days' },
-    { icon: '🎯', label: 'GOALS MET', value: '4/5' },
-  ]
-
   return (
     <div className="px-8 py-6 overflow-y-auto">
       {/* Header */}
@@ -157,26 +279,29 @@ const Analytics = () => {
 
       {/* Score Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {scoreCards.map((card, i) => (
-          <article key={i} className="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md hover:border-gray-200 transition-all duration-300">
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-10 h-10 ${card.iconBg} rounded-xl flex items-center justify-center`}>
-                {card.icon}
+        {scoreCards.map((card, i) => {
+          const iconKey = i === 0 ? 'productivity' : i === 1 ? 'credibility' : 'burnout'
+          return (
+            <article key={i} className="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md hover:border-gray-200 transition-all duration-300">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`w-10 h-10 ${iconBgMap[iconKey]} rounded-xl flex items-center justify-center`}>
+                  {iconMap[iconKey]}
+                </div>
+                <div className="flex items-center gap-1">
+                  <svg className={`w-3.5 h-3.5 ${card.positive ? 'text-emerald-500' : 'text-red-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={card.positive ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"} />
+                  </svg>
+                  <span className={`text-xs font-semibold ${card.positive ? 'text-emerald-500' : 'text-red-400'}`}>{card.change}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <svg className={`w-3.5 h-3.5 ${card.positive ? 'text-emerald-500' : 'text-red-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={card.positive ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"} />
-                </svg>
-                <span className={`text-xs font-semibold ${card.positive ? 'text-emerald-500' : 'text-red-400'}`}>{card.change}</span>
-              </div>
-            </div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{card.label}</p>
-            <p className="text-3xl font-extrabold text-gray-900 mb-2">{card.value}</p>
-            <p className="text-[11px] text-gray-400 flex items-center gap-1">
-              <span aria-hidden="true">ⓘ</span> {card.desc}
-            </p>
-          </article>
-        ))}
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{card.label}</p>
+              <p className="text-3xl font-extrabold text-gray-900 mb-2">{card.value}</p>
+              <p className="text-[11px] text-gray-400 flex items-center gap-1">
+                <span aria-hidden="true">ⓘ</span> {card.desc}
+              </p>
+            </article>
+          )
+        })}
       </div>
 
       {/* Charts Row */}
@@ -185,29 +310,33 @@ const Analytics = () => {
         <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-1">
             <div>
-              <h2 className="text-base font-bold text-gray-900">Activity Trends</h2>
-              <p className="text-xs text-gray-400">Completed tasks vs. Previous period</p>
+              <h2 className="text-base font-bold text-gray-900">{chartTitle}</h2>
+              <p className="text-xs text-gray-400">{chartSubtitle}</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full" aria-hidden="true"></span>
-                <span className="text-xs text-gray-500">This Week</span>
+                <span className="text-xs text-gray-500">
+                  {activeRange === 'daily' ? 'Today' : activeRange === 'weekly' ? 'This Week' : 'This Month'}
+                </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 bg-gray-300 rounded-full" aria-hidden="true"></span>
-                <span className="text-xs text-gray-500">Last Week</span>
+                <span className="text-xs text-gray-500">
+                  {activeRange === 'daily' ? 'Yesterday' : activeRange === 'weekly' ? 'Last Week' : 'Last Month'}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Chart */}
-          <div className="mt-4 relative h-48" role="img" aria-label="Activity trends chart showing completed tasks this week versus last week. Thursday had the most tasks completed this week with 22.">
+          <div className="mt-4 relative h-48" role="img" aria-label={`${chartTitle} chart`}>
             {/* Y axis labels */}
             <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[11px] text-gray-400 w-8" aria-hidden="true">
-              <span>28</span>
-              <span>21</span>
-              <span>14</span>
-              <span>7</span>
+              <span>{chartData.maxVal}</span>
+              <span>{Math.round(chartData.maxVal * 0.75)}</span>
+              <span>{Math.round(chartData.maxVal * 0.5)}</span>
+              <span>{Math.round(chartData.maxVal * 0.25)}</span>
               <span>0</span>
             </div>
             {/* Grid and chart area */}
@@ -218,7 +347,7 @@ const Analytics = () => {
               ))}
               {/* SVG chart */}
               <svg className="w-full h-full" viewBox="0 0 600 180" preserveAspectRatio="none" aria-hidden="true">
-                {/* Area fill for this week */}
+                {/* Area fill for current period */}
                 <defs>
                   <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#6366f1" stopOpacity="0.15" />
@@ -226,34 +355,34 @@ const Analytics = () => {
                   </linearGradient>
                 </defs>
                 <path
-                  d={`M0,${180 - (thisWeek[0] / maxVal) * 170} ${thisWeek.map((v, i) => `L${(i / 6) * 600},${180 - (v / maxVal) * 170}`).join(' ')} L600,180 L0,180 Z`}
+                  d={`M0,${180 - (chartData.current[0] / chartData.maxVal) * 170} ${chartData.current.map((v, i) => `L${(i / (chartData.current.length - 1)) * 600},${180 - (v / chartData.maxVal) * 170}`).join(' ')} L600,180 L0,180 Z`}
                   fill="url(#areaGrad)"
                 />
-                {/* This week line */}
+                {/* Current period line */}
                 <polyline
-                  points={thisWeek.map((v, i) => `${(i / 6) * 600},${180 - (v / maxVal) * 170}`).join(' ')}
+                  points={chartData.current.map((v, i) => `${(i / (chartData.current.length - 1)) * 600},${180 - (v / chartData.maxVal) * 170}`).join(' ')}
                   fill="none"
                   stroke="#6366f1"
                   strokeWidth="2.5"
                   strokeLinejoin="round"
                 />
-                {/* Last week dashed line */}
+                {/* Previous period dashed line */}
                 <polyline
-                  points={lastWeek.map((v, i) => `${(i / 6) * 600},${180 - (v / maxVal) * 170}`).join(' ')}
+                  points={chartData.previous.map((v, i) => `${(i / (chartData.previous.length - 1)) * 600},${180 - (v / chartData.maxVal) * 170}`).join(' ')}
                   fill="none"
                   stroke="#d1d5db"
                   strokeWidth="2"
                   strokeDasharray="6,4"
                   strokeLinejoin="round"
                 />
-                {/* Dots for this week */}
-                {thisWeek.map((v, i) => (
-                  <circle key={i} cx={(i / 6) * 600} cy={180 - (v / maxVal) * 170} r="3.5" fill="#6366f1" />
+                {/* Dots for current period */}
+                {chartData.current.map((v, i) => (
+                  <circle key={i} cx={(i / (chartData.current.length - 1)) * 600} cy={180 - (v / chartData.maxVal) * 170} r="3.5" fill="#6366f1" />
                 ))}
               </svg>
               {/* X axis labels */}
               <div className="flex justify-between mt-2 text-[11px] text-gray-400" aria-hidden="true">
-                {weekDays.map(d => <span key={d}>{d}</span>)}
+                {chartData.labels.map((d, i) => <span key={i}>{d}</span>)}
               </div>
             </div>
           </div>

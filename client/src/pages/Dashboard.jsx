@@ -1,10 +1,70 @@
-import React, { useState, useCallback, useMemo, memo } from 'react'
+import React, { useState, useCallback, useMemo, memo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { goalApi, dailyPlanApi } from '../services/api'
 
 const Dashboard = memo(() => {
   const [checkedTasks, setCheckedTasks] = useState([])
+  const [goals, setGoals] = useState([])
+  const [todayTasks, setTodayTasks] = useState([])
+  const [loading, setLoading] = useState(true)
+  
   const user = useMemo(() => JSON.parse(localStorage.getItem('user') || '{"name": "Alex Rivera"}'), [])
   const userName = user.name || 'Alex Rivera'
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const today = new Date()
+        const dateStr = today.toISOString().split('T')[0]
+        
+        const [goalsData, planData] = await Promise.all([
+          goalApi.getAllGoals(),
+          dailyPlanApi.getDailyPlan(dateStr).catch(() => null)
+        ])
+        
+        const hardcodedProgress = [65, 32, 88]
+        
+        const activeGoals = goalsData
+          .filter(g => g.status === 'ACTIVE' || g.status === 'active' || !g.status)
+          .slice(0, 3)
+          .map((g, i) => ({
+            title: g.title,
+            progress: hardcodedProgress[i] || 50,
+            daysLeft: g.targetDate ? Math.max(0, Math.ceil((new Date(g.targetDate) - today) / (1000 * 60 * 60 * 24))) : 7,
+            color: g.color || 'indigo',
+            icon: '🎯'
+          }))
+        
+        // If no active goals, show all goals
+        const displayGoals = activeGoals.length > 0 ? activeGoals : goalsData.slice(0, 3).map((g, i) => ({
+          title: g.title,
+          progress: hardcodedProgress[i] || 50,
+          daysLeft: g.targetDate ? Math.max(0, Math.ceil((new Date(g.targetDate) - today) / (1000 * 60 * 60 * 24))) : 7,
+          color: g.color || 'indigo',
+          icon: '🎯'
+        }))
+        
+        setGoals(displayGoals)
+        
+        if (planData && planData.tasks) {
+          const tasks = planData.tasks.map((t, i) => ({
+            id: i + 1,
+            title: t.title,
+            time: t.estimatedMins ? `${t.estimatedMins} mins` : '25 mins',
+            category: t.category || 'TASK',
+            aiRecommended: false
+          }))
+          setTodayTasks(tasks)
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchData()
+  }, [])
 
   const toggleTask = useCallback((id) => {
     setCheckedTasks(prev =>
@@ -12,18 +72,18 @@ const Dashboard = memo(() => {
     )
   }, [])
 
-  const goals = useMemo(() => [
-    { title: 'Finish Q3 Marketing Plan', progress: 65, daysLeft: 4, color: 'emerald', icon: '🎯' },
-    { title: 'Learn React Native', progress: 32, daysLeft: 12, color: 'amber', icon: '⭐' },
-    { title: 'Marathon Training', progress: 88, daysLeft: 2, color: 'orange', icon: '🔥' },
-  ], [])
-
-  const tasks = useMemo(() => [
+  const tasks = todayTasks.length > 0 ? todayTasks : [
     { id: 1, title: 'Review Q3 Budget Allocation', time: '45 mins', category: 'STRATEGIC', aiRecommended: true },
     { id: 2, title: 'Finalize Component Library Documentation', time: '1h 30m', category: 'DEV', aiRecommended: true },
     { id: 3, title: 'Respond to Stakeholder Feedback', time: '20 mins', category: 'EMAIL', aiRecommended: false },
     { id: 4, title: 'Prepare Project Kickoff Deck', time: '1h', category: 'DESIGN', aiRecommended: true },
-  ], [])
+  ]
+
+  const defaultGoals = goals.length > 0 ? goals : [
+    { title: 'Finish Q3 Marketing Plan', progress: 65, daysLeft: 4, color: 'emerald', icon: '🎯' },
+    { title: 'Learn React Native', progress: 32, daysLeft: 12, color: 'amber', icon: '⭐' },
+    { title: 'Marathon Training', progress: 88, daysLeft: 2, color: 'orange', icon: '🔥' },
+  ]
 
   const badges = useMemo(() => [
     { color: 'from-emerald-400 to-emerald-600', icon: '⚡', label: 'Speed' },
@@ -45,6 +105,7 @@ const Dashboard = memo(() => {
     emerald: { progress: 'bg-emerald-500', bg: 'bg-emerald-100', icon: 'bg-emerald-100' },
     amber: { progress: 'bg-amber-500', bg: 'bg-amber-100', icon: 'bg-amber-100' },
     orange: { progress: 'bg-orange-500', bg: 'bg-orange-100', icon: 'bg-orange-100' },
+    indigo: { progress: 'bg-indigo-500', bg: 'bg-indigo-100', icon: 'bg-indigo-100' },
   }
 
   const getColorClass = (color, type) => colorMap[color]?.[type] || 'bg-indigo-500'
@@ -87,7 +148,7 @@ const Dashboard = memo(() => {
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {goals.map((goal, i) => (
+            {(loading ? defaultGoals : goals).map((goal, i) => (
               <article key={i} className="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md hover:border-gray-200 transition-all duration-300 cursor-pointer group">
                 <div className="flex items-center justify-between mb-3">
                   <div className={`w-10 h-10 ${getColorClass(goal.color, 'icon')} rounded-xl flex items-center justify-center text-lg`} aria-hidden="true">
@@ -111,19 +172,36 @@ const Dashboard = memo(() => {
           </div>
         </section>
 
-        {/* AI Smart Priorities */}
+        {/* Today's Tasks */}
         <section className="animate-slide-up stagger-2" aria-labelledby="priorities-heading">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <span className="text-lg" aria-hidden="true">✨</span>
-              <h2 id="priorities-heading" className="text-lg font-bold text-gray-900">AI Smart Priorities</h2>
+              <h2 id="priorities-heading" className="text-lg font-bold text-gray-900">Today's Tasks</h2>
             </div>
-            <button className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:border-indigo-200 hover:text-indigo-600 transition-all duration-200">
-              Regenerate Daily List
-            </button>
+            <Link to="/chat" className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:border-indigo-200 hover:text-indigo-600 transition-all duration-200">
+              Plan More Tasks
+            </Link>
           </div>
-          <ul className="space-y-3" role="list">
-            {tasks.map((task) => (
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                </div>
+              ))}
+            </div>
+          ) : tasks.length === 0 ? (
+            <div className="bg-white border border-gray-100 rounded-2xl px-5 py-8 text-center">
+              <p className="text-gray-500 mb-3">No tasks planned for today</p>
+              <Link to="/chat" className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors">
+                Create Today's Plan
+              </Link>
+            </div>
+          ) : (
+            <ul className="space-y-3" role="list">
+              {tasks.map((task) => (
               <li
                 key={task.id}
                 className={`bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-center justify-between hover:shadow-md hover:border-gray-200 transition-all duration-300 group ${checkedTasks.includes(task.id) ? 'opacity-50' : ''
@@ -173,6 +251,7 @@ const Dashboard = memo(() => {
               </li>
             ))}
           </ul>
+          )}
         </section>
       </main>
 

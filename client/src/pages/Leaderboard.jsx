@@ -9,9 +9,9 @@ const Leaderboard = () => {
     {
       rank: 1,
       badge: '🥇',
-      name: 'Sarah Jenkins',
+      name: 'Bibek Sharma',
       level: 'Level 14 Focus Master',
-      avatar: 'SJ',
+      avatar: 'BS',
       avatarBg: 'bg-rose-400',
       streak: 24,
       tasks: 412,
@@ -21,9 +21,9 @@ const Leaderboard = () => {
     {
       rank: 2,
       badge: '🥈',
-      name: 'Marcus Chen',
+      name: 'Priya KC',
       level: 'Level 13 Focus Master',
-      avatar: 'MC',
+      avatar: 'PK',
       avatarBg: 'bg-blue-400',
       streak: 18,
       tasks: 389,
@@ -33,9 +33,9 @@ const Leaderboard = () => {
     {
       rank: 3,
       badge: '🥉',
-      name: 'Elena Rodriguez',
+      name: 'Sanjay Thapa',
       level: 'Level 12 Focus Master',
-      avatar: 'ER',
+      avatar: 'ST',
       avatarBg: 'bg-amber-400',
       streak: 12,
       tasks: 345,
@@ -58,9 +58,9 @@ const Leaderboard = () => {
     {
       rank: 5,
       badge: null,
-      name: 'David Kim',
+      name: 'Nisha Tamang',
       level: 'Level 10 Focus Master',
-      avatar: 'DK',
+      avatar: 'NT',
       avatarBg: 'bg-teal-400',
       streak: 15,
       tasks: 310,
@@ -348,7 +348,7 @@ const Leaderboard = () => {
                 </svg>
               </div>
               <p className="text-xs text-indigo-700 leading-relaxed">
-                Users who engage in "Focus Duels" are 40% more likely to reach their weekly XP targets. Try challenging Sarah!
+                Users who engage in "Focus Duels" are 40% more likely to reach their weekly XP targets. Try challenging Bibek!
               </p>
             </div>
           </div>
