@@ -97,7 +97,7 @@ export async function getMilestone(req, res) {
 export async function updateMilestone(req, res) {
   try {
     const { id } = req.params;
-    const { title, description, targetDate, status, orderIndex } = req.body;
+    const { title, description, targetDate, status, orderIndex, checklist } = req.body;
 
     // Check if milestone exists
     const existingMilestone = await prisma.milestone.findUnique({ where: { id } });
@@ -111,6 +111,7 @@ export async function updateMilestone(req, res) {
     if (targetDate !== undefined) updateData.targetDate = targetDate ? new Date(targetDate) : null;
     if (status !== undefined) updateData.status = status;
     if (orderIndex !== undefined) updateData.orderIndex = orderIndex;
+    if (checklist !== undefined) updateData.checklist = checklist;
 
     const milestone = await prisma.milestone.update({
       where: { id },

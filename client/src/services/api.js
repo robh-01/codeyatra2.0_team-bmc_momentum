@@ -147,11 +147,11 @@ export const goalApi = {
   /**
    * Create a milestone under a goal
    */
-  async createMilestone(goalId, { title, description, targetDate }) {
+  async createMilestone(goalId, { title, description, targetDate, checklist }) {
     const response = await fetch(`${API_BASE}/goals/${goalId}/milestones`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, description, targetDate }),
+      body: JSON.stringify({ title, description, targetDate, checklist }),
     });
     if (!response.ok) {
       const error = await response.json();
@@ -448,6 +448,40 @@ export const planningApi = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Failed to finalize schedule');
+    }
+    return response.json();
+  },
+};
+
+// Daily Plan API
+export const dailyPlanApi = {
+  async getDailyPlan(date) {
+    const response = await fetch(`${API_BASE}/daily-plan/${date}`);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch daily plan');
+    }
+    return response.json();
+  },
+
+  async saveDailyPlan(date, tasks) {
+    const response = await fetch(`${API_BASE}/daily-plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, tasks }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to save daily plan');
+    }
+    return response.json();
+  },
+
+  async getUpcomingPlans(days = 7) {
+    const response = await fetch(`${API_BASE}/daily-plan/upcoming?days=${days}`);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch upcoming plans');
     }
     return response.json();
   },
