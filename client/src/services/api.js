@@ -147,11 +147,11 @@ export const goalApi = {
   /**
    * Create a milestone under a goal
    */
-  async createMilestone(goalId, { title, description, targetDate }) {
+  async createMilestone(goalId, { title, description, targetDate, checklist }) {
     const response = await fetch(`${API_BASE}/goals/${goalId}/milestones`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, description, targetDate }),
+      body: JSON.stringify({ title, description, targetDate, checklist }),
     });
     if (!response.ok) {
       const error = await response.json();

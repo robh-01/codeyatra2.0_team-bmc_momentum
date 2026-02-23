@@ -185,6 +185,7 @@ const Goals = () => {
       setView('milestones')
     } else if (view === 'milestones') {
       selectGoal(null)
+      fetchGoals()
       setView('goals')
     }
   }
@@ -529,7 +530,12 @@ const Goals = () => {
                 </div>
               ) : (
                 <ul className="space-y-3" role="list">
-                  {goals.map((goal) => (
+                  {goals.map((goal) => {
+                    const allCheckpoints = (goal.milestones || []).flatMap(m => m.checklist || [])
+                    const totalCheckpoints = allCheckpoints.length
+                    const completedCheckpoints = allCheckpoints.filter(c => c.done).length
+                    const goalProgress = totalCheckpoints > 0 ? Math.round((completedCheckpoints / totalCheckpoints) * 100) : 0
+                    return (
                     <li
                       key={goal.id}
                       onClick={() => handleSelectGoal(goal)}
@@ -548,10 +554,10 @@ const Goals = () => {
                             <div className="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                               <div 
                                 className="h-full bg-indigo-500 rounded-full transition-all duration-300" 
-                                style={{ width: `${goal.progress || 0}%` }}
+                                style={{ width: `${goalProgress}%` }}
                               />
                             </div>
-                            <span className="text-xs text-gray-400">{goal.progress || 0}%</span>
+                            <span className="text-xs text-gray-400">{goalProgress}%</span>
                           </div>
                         </div>
                       </div>
@@ -569,7 +575,7 @@ const Goals = () => {
                         </svg>
                       </div>
                     </li>
-                  ))}
+                  )})}
                 </ul>
               )}
             </section>
@@ -645,139 +651,130 @@ const Goals = () => {
                 </div>
               ) : (
                 <ul className="space-y-3" role="list">
-                  {milestones.map((milestone) => (
+                  {[...milestones].sort((a, b) => {
+                    const aComplete = a.checklist?.length > 0 && a.checklist.every(c => c.done)
+                    const bComplete = b.checklist?.length > 0 && b.checklist.every(c => c.done)
+                    return aComplete === bComplete ? 0 : aComplete ? 1 : -1
+                  }).map((milestone) => {
+                    const isExpanded = expandedChecklist === milestone.id
+                    const hasChecklist = milestone.checklist && milestone.checklist.length > 0
+                    const isComplete = hasChecklist && milestone.checklist.every(c => c.done)
+                    return (
                     <li
                       key={milestone.id}
-                      onClick={() => handleSelectMilestone(milestone)}
-                      className="flex items-center gap-4 px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50 transition-all duration-200 cursor-pointer group"
+                      className={`rounded-xl transition-all duration-200 group border ${isComplete ? 'bg-green-50/50 border-green-100 opacity-75' : 'bg-gray-50 border-gray-100'}`}
                     >
-                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-gray-800">{milestone.title}</span>
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="text-xs text-gray-400">{milestone.taskCount || 0} tasks</span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusColors[milestone.status] || statusColors.PENDING}`}>
-                            {milestone.status || 'PENDING'}
-                          </span>
-                          <div className="flex items-center gap-1">
-                            <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-blue-500 rounded-full transition-all duration-300" 
-                                style={{ width: `${milestone.progress || 0}%` }}
-                              />
+                      <div
+                        onClick={() => hasChecklist && setExpandedChecklist(isExpanded ? null : milestone.id)}
+                        className={`flex items-center gap-4 px-5 py-4 rounded-xl transition-all duration-200 ${hasChecklist ? 'cursor-pointer hover:bg-indigo-50' : ''}`}
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isComplete ? 'bg-green-100' : 'bg-blue-100'}`}>
+                          {isComplete ? (
+                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <span className={`text-sm font-medium ${isComplete ? 'line-through text-gray-400' : 'text-gray-800'}`}>{milestone.title}</span>
+                           <div className="flex items-center gap-3 mt-1">
+                            <span className="text-xs text-gray-400">{milestone.checklist?.length || 0} checkpoints</span>
+                            <div className="flex items-center gap-1">
+                              <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full transition-all duration-300 ${isComplete ? 'bg-green-500' : 'bg-blue-500'}`}
+                                  style={{ width: `${milestone.checklist?.length ? Math.round((milestone.checklist.filter(c => c.done).length / milestone.checklist.length) * 100) : 0}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-gray-400">{milestone.checklist?.length ? Math.round((milestone.checklist.filter(c => c.done).length / milestone.checklist.length) * 100) : 0}%</span>
                             </div>
-                            <span className="text-xs text-gray-400">{milestone.progress || 0}%</span>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {(milestone.checklist && milestone.checklist.length > 0) && (
+                        <div className="flex items-center gap-2">
+                          {hasChecklist && (
+                            <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          )}
                           <button
-                            onClick={(e) => { e.stopPropagation(); setExpandedChecklist(expandedChecklist === milestone.id ? null : milestone.id); }}
-                            className="p-1.5 hover:bg-gray-100 rounded-lg transition-all text-gray-400"
-                            title="Toggle checklist"
+                            onClick={(e) => { e.stopPropagation(); deleteMilestone(milestone.id); fetchGoal(selectedGoal.id); }}
+                            className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all text-gray-400"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
-                        )}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); deleteMilestone(milestone.id); fetchGoal(selectedGoal.id); }}
-                          className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all text-gray-400"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                        <svg className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
+                        </div>
                       </div>
+                      {/* Accordion checklist panel */}
+                      {isExpanded && (
+                        <div className="px-5 pb-4 border-t border-gray-100">
+                          {/* Add checklist item */}
+                          <div className="flex gap-2 mt-3 mb-3">
+                            <input
+                              type="text"
+                              value={newChecklistItem}
+                              onChange={(e) => setNewChecklistItem(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleAddChecklistItem(milestone.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              placeholder="Add a checklist item..."
+                              className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                            />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleAddChecklistItem(milestone.id); }}
+                              disabled={!newChecklistItem.trim()}
+                              className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                            >
+                              Add
+                            </button>
+                          </div>
+                          {/* Checklist items */}
+                          {hasChecklist ? (
+                            <ul className="space-y-2">
+                              {milestone.checklist.map((item, idx) => (
+                                <li key={idx} className="flex items-center gap-3 px-3 py-2 bg-white rounded-lg group/item">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleToggleChecklistItem(milestone.id, idx); }}
+                                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                                      item.done
+                                        ? 'bg-indigo-600 border-indigo-600'
+                                        : 'border-gray-300 hover:border-indigo-400'
+                                    }`}
+                                  >
+                                    {item.done && (
+                                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                  <span className={`flex-1 text-sm ${item.done ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                                    {item.text}
+                                  </span>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteChecklistItem(milestone.id, idx); }}
+                                    className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-red-50 hover:text-red-500 rounded transition-all"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-gray-400 text-center py-3">No checklist items yet</p>
+                          )}
+                        </div>
+                      )}
                     </li>
-                  ))}
+                  )})}
                 </ul>
               )}
             </section>
-
-            {/* Expandable Checklists */}
-            {expandedChecklist && (() => {
-              const expandedMilestone = milestones.find(m => m.id === expandedChecklist)
-              if (!expandedMilestone) return null
-              return (
-                <section className="bg-white border border-gray-100 rounded-2xl p-6 mb-6 animate-slide-up">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold text-gray-700">Checklist: {expandedMilestone.title}</h3>
-                    <button
-                      onClick={() => setExpandedChecklist(null)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                  {/* Add checklist item */}
-                  <div className="flex gap-2 mb-4">
-                    <input
-                      type="text"
-                      value={newChecklistItem}
-                      onChange={(e) => setNewChecklistItem(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddChecklistItem(expandedChecklist)}
-                      placeholder="Add a checklist item..."
-                      className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
-                    />
-                    <button
-                      onClick={() => handleAddChecklistItem(expandedChecklist)}
-                      disabled={!newChecklistItem.trim()}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                    >
-                      Add
-                    </button>
-                  </div>
-                  {/* Checklist items */}
-                  {expandedMilestone.checklist && expandedMilestone.checklist.length > 0 ? (
-                    <ul className="space-y-2">
-                      {expandedMilestone.checklist.map((item, idx) => (
-                        <li key={idx} className="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg group">
-                          <button
-                            onClick={() => handleToggleChecklistItem(expandedChecklist, idx)}
-                            className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                              item.done
-                                ? 'bg-indigo-600 border-indigo-600'
-                                : 'border-gray-300 hover:border-indigo-400'
-                            }`}
-                          >
-                            {item.done && (
-                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </button>
-                          <span className={`flex-1 text-sm ${item.done ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                            {item.text}
-                          </span>
-                          <button
-                            onClick={() => handleDeleteChecklistItem(expandedChecklist, idx)}
-                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 hover:text-red-500 rounded transition-all"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-gray-400 text-center py-4">No checklist items yet</p>
-                  )}
-                </section>
-              )
-            })()}
           </>
         )}
 
