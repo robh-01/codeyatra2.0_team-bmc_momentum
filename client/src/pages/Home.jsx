@@ -1,13 +1,6 @@
 import React, { memo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-const STATS = [
-  { value: '10K+', label: 'Active Users' },
-  { value: '2M+', label: 'Tasks Completed' },
-  { value: '98%', label: 'Satisfaction' },
-  { value: '4.9', label: 'App Rating' },
-]
-
 const HOW_IT_WORKS = [
   { step: '01', title: 'Set Your Goals', desc: 'Define clear, measurable goals and let AI break them into manageable milestones.' },
   { step: '02', title: 'Plan Your Day', desc: 'Get personalized daily plans adapted to your energy levels and priorities.' },
@@ -89,12 +82,12 @@ const Home = memo(() => {
         <div className="max-w-3xl mx-auto relative z-10 animate-fade-in">
           <div className="text-center">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-5 py-2 bg-white/80 backdrop-blur-sm border border-indigo-100 rounded-full mb-10 shadow-sm">
-              <span className="relative flex h-2 w-2">
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/80 backdrop-blur-sm border border-indigo-100 rounded-full mb-10 shadow-sm max-w-full">
+              <span className="relative flex h-2 w-2 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
               </span>
-              <span className="text-sm font-semibold text-indigo-600 tracking-wide">Your Personal Productivity Partner</span>
+              <span className="text-sm font-semibold text-indigo-600 tracking-wide whitespace-nowrap">Your Personal Productivity Partner</span>
             </div>
 
             {/* Main Heading */}
@@ -128,16 +121,6 @@ const Home = memo(() => {
                 </svg>
                 <span>Watch Demo</span>
               </button>
-            </div>
-
-            {/* Stats Bar */}
-            <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-2xl mx-auto">
-              {STATS.map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <p className="text-2xl sm:text-3xl font-extrabold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{stat.value}</p>
-                  <p className="text-xs sm:text-sm text-gray-400 mt-1 font-medium">{stat.label}</p>
-                </div>
-              ))}
             </div>
 
             {/* Scroll indicator */}
