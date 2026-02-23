@@ -99,10 +99,10 @@ const MarkdownMessage = ({ content }) => {
   )
 }
 
-const AIChat = ({ 
-  messages, 
-  onSendMessage, 
-  isLoading, 
+const AIChat = ({
+  messages,
+  onSendMessage,
+  isLoading,
   placeholder = "Type your message...",
   quickActions = [],
   title = "AI Assistant",
@@ -152,8 +152,11 @@ const AIChat = ({
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-gradient-to-r from-white to-indigo-50/30">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm shadow-indigo-200">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 20V6l5 6 5-6v14" />
+              <path d="M2 10h3" strokeWidth="1.5" strokeOpacity="0.7" />
+              <path d="M1 14h4" strokeWidth="1.5" strokeOpacity="0.9" />
+              <path d="M3 18h2" strokeWidth="1.5" strokeOpacity="0.5" />
             </svg>
           </div>
           <div>
@@ -204,18 +207,20 @@ const AIChat = ({
           <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}>
             <div className={`flex gap-3 max-w-[88%] ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
               {(message.role === 'assistant' || message.role === 'error') && (
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm mt-0.5 ${
-                  message.role === 'error'
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm mt-0.5 ${message.role === 'error'
                     ? 'bg-gradient-to-br from-red-500 to-rose-600 shadow-red-200'
                     : 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-200'
-                }`}>
+                  }`}>
                   {message.role === 'error' ? (
                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
                   ) : (
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M7 20V6l5 6 5-6v14" />
+                      <path d="M2 10h3" strokeWidth="1.5" strokeOpacity="0.7" />
+                      <path d="M1 14h4" strokeWidth="1.5" strokeOpacity="0.9" />
+                      <path d="M3 18h2" strokeWidth="1.5" strokeOpacity="0.5" />
                     </svg>
                   )}
                 </div>
@@ -249,8 +254,11 @@ const AIChat = ({
           <div className="flex justify-start animate-fade-in">
             <div className="flex gap-3 max-w-[88%]">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200 mt-0.5">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M7 20V6l5 6 5-6v14" />
+                  <path d="M2 10h3" strokeWidth="1.5" strokeOpacity="0.7" />
+                  <path d="M1 14h4" strokeWidth="1.5" strokeOpacity="0.9" />
+                  <path d="M3 18h2" strokeWidth="1.5" strokeOpacity="0.5" />
                 </svg>
               </div>
               <div className="min-w-0">
@@ -268,8 +276,11 @@ const AIChat = ({
           <div className="flex justify-start animate-fade-in">
             <div className="flex gap-3 max-w-[88%]">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm shadow-indigo-200">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M7 20V6l5 6 5-6v14" />
+                  <path d="M2 10h3" strokeWidth="1.5" strokeOpacity="0.7" />
+                  <path d="M1 14h4" strokeWidth="1.5" strokeOpacity="0.9" />
+                  <path d="M3 18h2" strokeWidth="1.5" strokeOpacity="0.5" />
                 </svg>
               </div>
               <div className="px-4 py-3 bg-gradient-to-br from-gray-50 to-white border border-gray-100 rounded-2xl rounded-tl-md shadow-sm">
@@ -321,11 +332,10 @@ const AIChat = ({
           <button
             onClick={() => handleSend()}
             disabled={!input.trim() || isLoading}
-            className={`p-3 rounded-xl transition-all duration-300 shrink-0 ${
-              input.trim() && !isLoading
+            className={`p-3 rounded-xl transition-all duration-300 shrink-0 ${input.trim() && !isLoading
                 ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
                 : 'bg-indigo-100 text-indigo-400 cursor-not-allowed'
-            }`}
+              }`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
