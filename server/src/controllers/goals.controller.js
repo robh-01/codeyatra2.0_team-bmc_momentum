@@ -11,26 +11,73 @@ import prisma from '../lib/prisma.js';
  */
 export async function discussGoal(req, res) {
   try {
-    const { goal, conversationHistory = [], userMessage, enableThinking = true } = req.body;
+    const { goal, proficiencyLevel = 'INTERMEDIATE', conversationHistory = [], userMessage, enableThinking = true } = req.body;
 
     if (!goal && !userMessage) {
       return res.status(400).json({ error: 'Goal or user message is required' });
     }
 
-    const systemPrompt = `You are a supportive AI goal coach helping users break down their goals into achievable subgoals. 
+    const proficiencyInstructions = {
+      'BEGINNER': `The user is a BEGINNER in this area. You MUST be extremely thorough:
+- Break everything down into very small, specific steps
+- Explain concepts simply with examples
+- Ask questions to understand their current situation
+- Provide detailed checkpoints for each milestone
+- Don't assume any prior knowledge
+- Be patient and encouraging`,
+
+      'INTERMEDIATE': `The user has INTERMEDIATE experience in this area:
+- Provide a balanced breakdown with moderate detail
+- Skip basic explanations, focus on practical steps
+- Include reasonable checkpoints
+- Be concise but complete`,
+
+      'ADVANCED': `The user is ADVANCED in this area:
+- Be very concise
+- Just provide the key milestones
+- Skip basic explanations
+- Focus on high-level structure only`,
+
+      'EXPERT': `The user is an EXPERT in this area:
+- Be extremely concise
+- Just give the main milestones
+- No explanations needed
+- Maximum 3-4 milestones`
+    };
+
+    const systemPrompt = `You are a supportive AI goal coach helping users break down their goals into achievable milestones with checkpoints.
+
+IMPORTANT: ${proficiencyInstructions[proficiencyLevel]}
 
 Your approach:
 1. Be encouraging and user-centric - always consider the user's feedback and preferences
 2. Ask clarifying questions to understand the goal better (timeline, resources, constraints)
-3. Suggest 3-5 specific, actionable subgoals based on the conversation
-4. Each subgoal should be SMART (Specific, Measurable, Achievable, Relevant, Time-bound)
-5. Be concise but helpful - avoid overwhelming the user
-6. If the user provides feedback or modifications, incorporate them thoughtfully
+3. Suggest milestones (not separate goals) - typically 3-6 milestones depending on complexity
 
-Format your subgoal suggestions clearly when providing them:
-- Start each subgoal with a bullet point
-- Include estimated time/effort when relevant
-- Group related subgoals if needed`;
+CRITICAL - Milestone Guidelines:
+- Milestones must be SPECIFIC and MEASURABLE achievements, not vague concepts
+- Examples of GOOD milestones: "Run 3 days this week", "Complete online course chapter 1", "Save $500", "Read 50 pages"
+- Examples of BAD milestones: "Build habit", "Make progress", "Get healthier", "Learn more"
+
+CRITICAL - Checkpoint Requirements:
+- EVERY milestone MUST have 2-3 specific checkpoints
+- Checkpoints are concrete, actionable items
+- Examples: "Walk 10 minutes every morning", "Complete 3 small, sets of exercises", "Watch tutorial video", "Practice for 30 minutes"
+- NEVER create a milestone with zero checkpoints
+
+Format your milestone suggestions with checkpoints:
+- Use clear headings for each milestone (specific achievement)
+- List 2-3 specific checkpoints under each milestone
+- Checkpoints should be concrete actions, not vague concepts
+
+Example for "I want to get fit" (beginner):
+GOOD:
+- Milestone: "Schedule and complete doctor checkup" → Checkpoints: "Call to book appointment", "Go to appointment", "Ask about exercise plan"
+- Milestone: "Walk 10 minutes daily for 2 weeks" → Checkpoints: "Walk 10 mins each morning", "Log activity in journal", "Increase to 15 mins in week 2"
+
+BAD (do NOT do this):
+- Milestone: "Baseline health check" with 0 checkpoints
+- Milestone: "Build healthy habits" with 0 checkpoints`;
 
     const messages = [...conversationHistory];
 
@@ -38,7 +85,7 @@ Format your subgoal suggestions clearly when providing them:
     if (goal && conversationHistory.length === 0) {
       messages.push({
         role: 'user',
-        content: `I want to achieve this goal: "${goal}". Can you help me break it down into manageable subgoals? First, ask me any clarifying questions you need.`,
+        content: `I want to achieve this goal: "${goal}". Please help me break it down into milestones with checkpoints. Ask me any clarifying questions first if needed.`,
       });
     } else if (userMessage) {
       messages.push({ role: 'user', content: userMessage });
@@ -56,7 +103,7 @@ Format your subgoal suggestions clearly when providing them:
 }
 
 /**
- * Extract subgoals from conversation
+ * Extract milestones with checkpoints from conversation
  * Uses non-streaming + thinking mode for accurate JSON extraction
  */
 export async function extractSubgoals(req, res) {
@@ -67,25 +114,43 @@ export async function extractSubgoals(req, res) {
       return res.status(400).json({ error: 'Goal and conversation history are required' });
     }
 
-    const systemPrompt = `Based on the conversation about the user's goal, extract the final agreed-upon subgoals.
+    const systemPrompt = `Based on the conversation about the user's goal, extract the final agreed-upon MILESTONES with CHECKPOINTS.
 
-Return ONLY a JSON array with the following structure (no other text, no markdown code blocks):
-[
-  {
-    "title": "Subgoal title",
-    "description": "Brief description",
-    "estimatedDays": 7,
-    "priority": "high" | "medium" | "low"
-  }
-]
+Return ONLY a JSON object with the following structure (no other text, no markdown code blocks):
+{
+  "goal": "The main goal title",
+  "milestones": [
+    {
+      "title": "Specific measurable milestone title",
+      "description": "Brief description",
+      "checkpoints": [
+        { "text": "Specific checkpoint 1", "done": false },
+        { "text": "Specific checkpoint 2", "done": false },
+        { "text": "Specific checkpoint 3", "done": false }
+      ],
+      "estimatedDays": 7,
+      "priority": "high" | "medium" | "low"
+    }
+  ]
+}
 
-Consider the user's feedback and preferences from the conversation when finalizing the subgoals.`;
+CRITICAL RULES:
+1. EVERY milestone MUST have at least 2-3 checkpoints - NEVER create a milestone with 0 checkpoints
+2. Milestones must be SPECIFIC and MEASURABLE achievements (not vague concepts)
+3. If the conversation didn't explicitly discuss specific checkpoints, GENERATE appropriate ones based on the milestone title
+4. Examples of GOOD milestones: "Run 3 days this week", "Complete chapter 1", "Save $500", "Read 50 pages"
+5. Examples of BAD milestones (NEVER use): "Build habit", "Make progress", "Get healthier", "Be consistent"
+
+If no checkpoints were discussed, create appropriate checkpoints like:
+- For "exercise": "Walk/run for X minutes", "Complete workout video", "Log activity"
+- For "learning": "Watch tutorial", "Practice exercise", "Review notes"
+- For "finance": "Set budget", "Track expenses", "Review savings"`;
 
     const messages = [
       ...conversationHistory,
       {
         role: 'user',
-        content: `Please extract the final subgoals we discussed for my goal: "${goal}". Return them as a JSON array only, no other text.`,
+        content: `Please extract the final milestones with checkpoints we discussed for my goal: "${goal}". Return them as a JSON object only, no other text.`,
       },
     ];
 
@@ -93,25 +158,28 @@ Consider the user's feedback and preferences from the conversation when finalizi
     const content = await chatWithOllama(messages, systemPrompt, true);
 
     // Try to parse the JSON response
-    let subgoals;
+    let result;
     try {
       // Extract JSON from the response (in case there's extra text or markdown)
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        subgoals = JSON.parse(jsonMatch[0]);
+        result = JSON.parse(jsonMatch[0]);
       } else {
-        throw new Error('No JSON array found in response');
+        throw new Error('No JSON object found in response');
       }
     } catch (parseError) {
-      console.error('Failed to parse subgoals:', parseError);
+      console.error('Failed to parse milestones:', parseError);
       console.error('Raw response:', content);
-      return res.status(500).json({ error: 'Failed to parse subgoals from AI response' });
+      return res.status(500).json({ error: 'Failed to parse milestones from AI response' });
     }
 
-    res.json({ subgoals });
+    res.json({ 
+      goal: result.goal || goal,
+      milestones: result.milestones || []
+    });
   } catch (error) {
-    console.error('Error extracting subgoals:', error);
-    res.status(500).json({ error: 'Failed to extract subgoals', details: error.message });
+    console.error('Error extracting milestones:', error);
+    res.status(500).json({ error: 'Failed to extract milestones', details: error.message });
   }
 }
 
@@ -199,6 +267,10 @@ export async function getAllGoals(req, res) {
 
       return {
         ...goal,
+        milestones: goal.milestones.map(m => ({
+          ...m,
+          taskCount: m._count?.tasks || 0,
+        })),
         progress,
         milestoneCount: totalMilestones,
         completedMilestoneCount: completedMilestones
@@ -217,7 +289,7 @@ export async function getAllGoals(req, res) {
  */
 export async function createGoal(req, res) {
   try {
-    const { title, description, targetDate } = req.body;
+    const { title, description, targetDate, proficiencyLevel, targetScope, targetDays } = req.body;
 
     if (!title || title.trim() === '') {
       return res.status(400).json({ error: 'Title is required' });
@@ -227,7 +299,10 @@ export async function createGoal(req, res) {
       data: {
         title: title.trim(),
         description: description?.trim() || null,
-        targetDate: targetDate ? new Date(targetDate) : null
+        targetDate: targetDate ? new Date(targetDate) : null,
+        proficiencyLevel: proficiencyLevel || null,
+        targetScope: targetScope?.trim() || null,
+        targetDays: targetDays ? parseInt(targetDays) : null
       }
     });
 
@@ -305,7 +380,7 @@ export async function getGoal(req, res) {
 export async function updateGoal(req, res) {
   try {
     const { id } = req.params;
-    const { title, description, targetDate, status } = req.body;
+    const { title, description, targetDate, status, proficiencyLevel, targetScope, targetDays } = req.body;
 
     // Check if goal exists
     const existingGoal = await prisma.goal.findUnique({ where: { id } });
@@ -318,6 +393,9 @@ export async function updateGoal(req, res) {
     if (description !== undefined) updateData.description = description?.trim() || null;
     if (targetDate !== undefined) updateData.targetDate = targetDate ? new Date(targetDate) : null;
     if (status !== undefined) updateData.status = status;
+    if (proficiencyLevel !== undefined) updateData.proficiencyLevel = proficiencyLevel;
+    if (targetScope !== undefined) updateData.targetScope = targetScope?.trim() || null;
+    if (targetDays !== undefined) updateData.targetDays = targetDays ? parseInt(targetDays) : null;
 
     const goal = await prisma.goal.update({
       where: { id },
@@ -359,7 +437,7 @@ export async function deleteGoal(req, res) {
 export async function createMilestone(req, res) {
   try {
     const { goalId } = req.params;
-    const { title, description, targetDate } = req.body;
+    const { title, description, targetDate, checklist } = req.body;
 
     if (!title || title.trim() === '') {
       return res.status(400).json({ error: 'Title is required' });
@@ -384,6 +462,7 @@ export async function createMilestone(req, res) {
         title: title.trim(),
         description: description?.trim() || null,
         targetDate: targetDate ? new Date(targetDate) : null,
+        checklist: checklist || null,
         orderIndex
       }
     });
@@ -392,5 +471,38 @@ export async function createMilestone(req, res) {
   } catch (error) {
     console.error('Error creating milestone:', error);
     res.status(500).json({ error: 'Failed to create milestone', details: error.message });
+  }
+}
+
+/**
+ * Update a milestone
+ */
+export async function updateMilestone(req, res) {
+  try {
+    const { id } = req.params;
+    const { title, description, targetDate, status, checklist } = req.body;
+
+    // Check if milestone exists
+    const existingMilestone = await prisma.milestone.findUnique({ where: { id } });
+    if (!existingMilestone) {
+      return res.status(404).json({ error: 'Milestone not found' });
+    }
+
+    const updateData = {};
+    if (title !== undefined) updateData.title = title.trim();
+    if (description !== undefined) updateData.description = description?.trim() || null;
+    if (targetDate !== undefined) updateData.targetDate = targetDate ? new Date(targetDate) : null;
+    if (status !== undefined) updateData.status = status;
+    if (checklist !== undefined) updateData.checklist = checklist;
+
+    const milestone = await prisma.milestone.update({
+      where: { id },
+      data: updateData
+    });
+
+    res.json(milestone);
+  } catch (error) {
+    console.error('Error updating milestone:', error);
+    res.status(500).json({ error: 'Failed to update milestone', details: error.message });
   }
 }

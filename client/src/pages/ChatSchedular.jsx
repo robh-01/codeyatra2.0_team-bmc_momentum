@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { planningApi } from '../services/api'
+import { planningApi, goalApi, dailyPlanApi } from '../services/api'
 
 // MargaDarshak robot icon - cute robot face with glowing cyan eyes
 const MargaDarshakIcon = ({ size = 'sm' }) => {
@@ -52,40 +52,36 @@ const ChatSchedular = () => {
   const [focusBlocks, setFocusBlocks] = useState(0)
   const [streamingContent, setStreamingContent] = useState('')
   const [thinkingMode, setThinkingMode] = useState(true)
+  const [goals, setGoals] = useState([])
+  const [loadingGoals, setLoadingGoals] = useState(true)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
 
-  // Sample goals - in a real app, these would come from a global state/context
-  const [goals] = useState([
-    {
-      id: 1,
-      title: 'Launch SaaS MVP',
-      progress: 45,
-      tasks: [
-        { id: 1, title: 'Finish UI Design Audit', done: false, priority: 'high' },
-        { id: 2, title: 'Implement user authentication', done: false, priority: 'high' },
-        { id: 3, title: 'Write API documentation', done: true, priority: 'medium' },
-      ]
-    },
-    {
-      id: 2,
-      title: 'Learn React Performance',
-      progress: 30,
-      tasks: [
-        { id: 4, title: 'React Performance Optimization', done: false, priority: 'medium' },
-        { id: 5, title: 'Study React.memo and useMemo', done: false, priority: 'low' },
-      ]
-    },
-    {
-      id: 3,
-      title: 'Team Management',
-      progress: 60,
-      tasks: [
-        { id: 6, title: 'Team Sync & Mail', done: false, priority: 'medium' },
-        { id: 7, title: 'Respond to stakeholder feedback', done: false, priority: 'high' },
-      ]
+  // Fetch goals from API on mount
+  useEffect(() => {
+    const fetchGoals = async () => {
+      try {
+        const goalsData = await goalApi.getAllGoals()
+        const goalsWithMilestones = await Promise.all(
+          goalsData.map(async (goal) => {
+            const fullGoal = await goalApi.getGoal(goal.id)
+            return {
+              id: goal.id,
+              title: goal.title,
+              progress: goal.progress || 0,
+              milestones: fullGoal.milestones || []
+            }
+          })
+        )
+        setGoals(goalsWithMilestones)
+      } catch (err) {
+        console.error('Error fetching goals:', err)
+      } finally {
+        setLoadingGoals(false)
+      }
     }
-  ])
+    fetchGoals()
+  }, [])
 
   const quickActions = [
     "I want to focus on high priority tasks",
@@ -288,6 +284,31 @@ const ChatSchedular = () => {
     setIsInitialized(false)
     setTotalWorkHours(0)
     setFocusBlocks(0)
+  }
+
+  const handleConfirmAndSave = async () => {
+    if (scheduledTasks.length === 0) return
+
+    try {
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      tomorrow.setHours(0, 0, 0, 0)
+      
+      const tasksToSave = scheduledTasks.map(task => ({
+        title: task.title,
+        description: task.description || null,
+        estimatedMins: task.duration ? parseInt(task.duration) : null,
+        status: task.done ? 'COMPLETED' : 'PENDING'
+      }))
+
+      await dailyPlanApi.saveDailyPlan(tomorrow.toISOString().split('T')[0], tasksToSave)
+      
+      alert('Daily plan saved successfully! You can view it in Focus Mode tomorrow.')
+      resetChat()
+    } catch (err) {
+      console.error('Error saving daily plan:', err)
+      alert('Failed to save daily plan. Please try again.')
+    }
   }
 
   return (
@@ -581,14 +602,15 @@ const ChatSchedular = () => {
 
         {/* Action Buttons */}
         <div className="mt-auto space-y-2">
-          <button
+          <button 
+            onClick={handleConfirmAndSave}
             disabled={scheduledTasks.length === 0}
-            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="w-full py-3 bg-gradient-to-red from-indigo-600 to-purple-600 text-white rounded-xl font-semibold text-sm shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            Confirm & Sync to Calendar
+            Confirm & Save for Tomorrow
           </button>
           <button
             onClick={resetChat}
