@@ -34,20 +34,30 @@ enum Priority {
   LOW
 }
 
+enum ProficiencyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
 // Models
 
 /// A high-level objective the user wants to achieve
 model Goal {
-  id          String      @id @default(uuid())
-  title       String
-  description String?
-  targetDate  DateTime?
-  status      GoalStatus  @default(ACTIVE)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                String           @id @default(uuid())
+  title             String
+  description       String?
+  targetDate        DateTime?
+  status            GoalStatus       @default(ACTIVE)
+  proficiencyLevel  ProficiencyLevel?
+  targetScope       String?
+  targetDays        Int?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
   
   // Relations
-  milestones  Milestone[]
+  milestones        Milestone[]
   
   @@map("goals")
 }
@@ -60,6 +70,7 @@ model Milestone {
   targetDate  DateTime?
   orderIndex  Int             @default(0)
   status      MilestoneStatus @default(PENDING)
+  checklist   Json?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   
