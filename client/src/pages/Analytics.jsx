@@ -239,12 +239,12 @@ const Analytics = () => {
   ]
 
   return (
-    <div className="px-8 py-6 overflow-y-auto">
+    <div className="px-4 sm:px-6 md:px-8 py-4 sm:py-6 overflow-y-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row items-start justify-between mb-4 sm:mb-6 gap-3 sm:gap-0 animate-fade-in">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Performance Analytics</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Deep insights into your productivity, focus, and well-being.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Performance Analytics</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Deep insights into your productivity, focus, and well-being.</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex bg-gray-100 rounded-lg p-0.5" role="tablist" aria-label="Time range">
@@ -278,11 +278,11 @@ const Analytics = () => {
       </div>
 
       {/* Score Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
         {scoreCards.map((card, i) => {
           const iconKey = i === 0 ? 'productivity' : i === 1 ? 'credibility' : 'burnout'
           return (
-            <article key={i} className="bg-white border border-gray-100 rounded-2xl p-5 hover:shadow-md hover:border-gray-200 transition-all duration-300">
+            <article key={i} className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 hover:shadow-md hover:border-gray-200 transition-all duration-300">
               <div className="flex items-center justify-between mb-3">
                 <div className={`w-10 h-10 ${iconBgMap[iconKey]} rounded-xl flex items-center justify-center`}>
                   {iconMap[iconKey]}
@@ -295,7 +295,7 @@ const Analytics = () => {
                 </div>
               </div>
               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{card.label}</p>
-              <p className="text-3xl font-extrabold text-gray-900 mb-2">{card.value}</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">{card.value}</p>
               <p className="text-[11px] text-gray-400 flex items-center gap-1">
                 <span aria-hidden="true">ⓘ</span> {card.desc}
               </p>
@@ -305,15 +305,15 @@ const Analytics = () => {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
         {/* Activity Trends - takes 2 cols */}
-        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-1">
+        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-1 gap-2 sm:gap-0">
             <div>
               <h2 className="text-base font-bold text-gray-900">{chartTitle}</h2>
               <p className="text-xs text-gray-400">{chartSubtitle}</p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full" aria-hidden="true"></span>
                 <span className="text-xs text-gray-500">
@@ -330,7 +330,7 @@ const Analytics = () => {
           </div>
 
           {/* Chart */}
-          <div className="mt-4 relative h-48" role="img" aria-label={`${chartTitle} chart`}>
+          <div className="mt-4 relative h-36 sm:h-48" role="img" aria-label={`${chartTitle} chart`}>
             {/* Y axis labels */}
             <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[11px] text-gray-400 w-8" aria-hidden="true">
               <span>{chartData.maxVal}</span>
@@ -389,7 +389,7 @@ const Analytics = () => {
         </div>
 
         {/* Effort Allocation */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-5">
+        <div className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5">
           <h2 className="text-base font-bold text-gray-900 mb-0.5">Effort Allocation</h2>
           <p className="text-xs text-gray-400 mb-5">Tasks by goal category</p>
 
@@ -422,7 +422,7 @@ const Analytics = () => {
       </div>
 
       {/* AI Intelligence Report */}
-      <section className="bg-white border border-gray-100 rounded-2xl p-6 mb-6" aria-labelledby="ai-report-heading">
+      <section className="bg-white border border-gray-100 rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6" aria-labelledby="ai-report-heading">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
             <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -435,9 +435,9 @@ const Analytics = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-5">
           {aiInsights.map((insight, i) => (
-            <article key={i} className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+            <article key={i} className="bg-gray-50 border border-gray-100 rounded-xl p-3 sm:p-4">
               <div className="flex items-start gap-3">
                 <div className={`w-8 h-8 ${insight.iconBg} rounded-lg flex items-center justify-center shrink-0`}>
                   {insight.icon}
@@ -462,13 +462,13 @@ const Analytics = () => {
       </section>
 
       {/* Bottom Stats Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
         {bottomStats.map((stat, i) => (
-          <div key={i} className="bg-white border border-gray-100 rounded-2xl px-5 py-4 flex items-center gap-3">
+          <div key={i} className="bg-white border border-gray-100 rounded-2xl px-3 sm:px-5 py-3 sm:py-4 flex items-center gap-2 sm:gap-3">
             <span className="text-lg" aria-hidden="true">{stat.icon}</span>
             <div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</p>
-              <p className="text-xl font-extrabold text-gray-900">{stat.value}</p>
+              <p className="text-lg sm:text-xl font-extrabold text-gray-900">{stat.value}</p>
             </div>
           </div>
         ))}

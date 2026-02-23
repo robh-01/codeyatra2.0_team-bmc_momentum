@@ -105,17 +105,32 @@ const FocusMode = () => {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [togglePause])
 
+  const [showTaskList, setShowTaskList] = useState(false)
+
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-indigo-50/30 to-purple-50/40 flex relative overflow-hidden">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-indigo-50/30 to-purple-50/40 flex flex-col md:flex-row relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-indigo-100/30 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-purple-100/30 rounded-full blur-3xl pointer-events-none" aria-hidden="true"></div>
 
-      {/* Task Sidebar - Left side, full height */}
-      <aside className="w-80 flex-shrink-0 bg-white border-r border-gray-100 flex flex-col">
-        <div className="p-6 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">Today's Tasks</h3>
-          <p className="text-sm text-gray-400 mt-1">{tasks.length} tasks</p>
+      {/* Task Sidebar - Left side, full height on desktop; overlay on mobile */}
+      <aside className={`${
+        showTaskList ? 'fixed inset-0 z-50 bg-white' : 'hidden'
+      } md:static md:flex md:w-72 lg:w-80 flex-shrink-0 bg-white border-r border-gray-100 flex-col`}>
+        <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Today's Tasks</h3>
+            <p className="text-sm text-gray-400 mt-1">{tasks.length} tasks</p>
+          </div>
+          <button
+            onClick={() => setShowTaskList(false)}
+            className="md:hidden p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Close task list"
+          >
+            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
           {tasks.length === 0 ? (
@@ -163,12 +178,12 @@ const FocusMode = () => {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col relative z-10">
+      <div className="flex-1 flex flex-col relative z-10 min-h-0">
         {/* Top Bar */}
-        <header className="flex items-center justify-between px-6 py-4" role="banner">
+        <header className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4" role="banner">
         <button
           onClick={() => navigate('/dashboard')}
-          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors"
+          className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors"
           aria-label="Exit focus mode and return to dashboard"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -177,28 +192,43 @@ const FocusMode = () => {
           Exit Focus
         </button>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          {/* Mobile task list toggle */}
+          <button
+            onClick={() => setShowTaskList(true)}
+            className="md:hidden p-2 hover:bg-white/60 rounded-lg transition-colors text-gray-500 hover:text-gray-700 relative"
+            aria-label="View task list"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            {tasks.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-indigo-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                {tasks.length}
+              </span>
+            )}
+          </button>
           <button className="p-2 hover:bg-white/60 rounded-lg transition-colors text-gray-500 hover:text-gray-700" aria-label="Toggle ambient sound">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
             </svg>
           </button>
-          <div className="flex items-center gap-2 px-4 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full" role="status">
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 bg-indigo-50 border border-indigo-100 rounded-full" role="status">
             <span className="relative flex h-2 w-2" aria-hidden="true">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
             </span>
-            <span className="text-xs font-semibold text-indigo-600">Flow Mode Active</span>
+            <span className="text-[10px] sm:text-xs font-semibold text-indigo-600">Flow Mode Active</span>
           </div>
         </div>
       </header>
 
       {/* Main Content Area - no scroll */}
-      <main className="flex-1 flex items-center justify-center relative z-10 px-6 overflow-hidden">
+      <main className="flex-1 flex items-center justify-center relative z-10 px-4 sm:px-6 overflow-hidden">
         {/* Timer Area */}
-        <div className="flex flex-col items-center justify-center py-8">
+        <div className="flex flex-col items-center justify-center py-4 sm:py-8">
           {/* Task Info */}
-          <div className="text-center mb-6 animate-fade-in">
+          <div className="text-center mb-4 sm:mb-6 animate-fade-in">
             {loading ? (
               <p className="text-sm text-gray-400">Loading tasks...</p>
             ) : allDone ? (
@@ -238,7 +268,7 @@ const FocusMode = () => {
           </div>
 
         {/* Timer Circle */}
-        <div className="relative w-56 h-56 sm:w-64 sm:h-64 mb-6" role="timer" aria-label={`${String(minutes).padStart(2, '0')} minutes and ${String(seconds).padStart(2, '0')} seconds remaining`}>
+        <div className="relative w-44 h-44 sm:w-56 sm:h-56 md:w-64 md:h-64 mb-4 sm:mb-6" role="timer" aria-label={`${String(minutes).padStart(2, '0')} minutes and ${String(seconds).padStart(2, '0')} seconds remaining`}>
           <svg className="w-full h-full -rotate-90" viewBox="0 0 300 300" aria-hidden="true">
             {/* Background circle */}
             <circle
@@ -273,7 +303,7 @@ const FocusMode = () => {
 
           {/* Center text */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-5xl sm:text-6xl font-extrabold text-gray-900 tracking-tight tabular-nums" aria-live="off">
+            <span className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight tabular-nums" aria-live="off">
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
             </span>
             <div className="flex items-center gap-1.5 mt-1">
@@ -286,12 +316,12 @@ const FocusMode = () => {
         </div>
 
         {/* Motivation text */}
-        <p className="text-sm text-gray-400 italic mb-4">
+        <p className="text-xs sm:text-sm text-gray-400 italic mb-3 sm:mb-4">
           "Your focus determines your reality."
         </p>
 
         {/* Points indicator */}
-        <div className="flex items-center gap-1.5 mb-4">
+        <div className="flex items-center gap-1.5 mb-3 sm:mb-4">
           <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -299,13 +329,13 @@ const FocusMode = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto">
           {!isRunning ? (
             <button
               onClick={startTask}
               disabled={!currentTask}
               aria-label="Start focus session"
-              className="flex items-center gap-2.5 px-8 py-3.5 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-2xl text-sm font-semibold shadow-lg shadow-indigo-200 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              className="flex items-center justify-center gap-2 sm:gap-2.5 w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-3.5 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-2xl text-sm font-semibold shadow-lg shadow-indigo-200 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M8 5v14l11-7z" />
@@ -316,7 +346,7 @@ const FocusMode = () => {
             <button
               onClick={togglePause}
               aria-label={isPaused ? 'Resume focus session' : 'Pause focus session'}
-              className="flex items-center gap-2.5 px-7 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm active:translate-y-0 transition-all duration-200"
+              className="flex items-center justify-center gap-2 sm:gap-2.5 w-full sm:w-auto px-5 sm:px-7 py-3 sm:py-3.5 bg-white border border-gray-200 rounded-2xl text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm active:translate-y-0 transition-all duration-200"
             >
               {isPaused ? (
                 <>
@@ -339,7 +369,7 @@ const FocusMode = () => {
             onClick={completeTask}
             disabled={allDone || !currentTask || !isRunning}
             aria-label={currentTaskIndex < tasks.length - 1 ? 'Complete task and move to next' : 'Complete final task'}
-            className="flex items-center gap-2.5 px-7 py-3.5 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-2xl text-sm font-semibold shadow-lg shadow-indigo-200 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="flex items-center justify-center gap-2 sm:gap-2.5 w-full sm:w-auto px-5 sm:px-7 py-3 sm:py-3.5 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-2xl text-sm font-semibold shadow-lg shadow-indigo-200 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
