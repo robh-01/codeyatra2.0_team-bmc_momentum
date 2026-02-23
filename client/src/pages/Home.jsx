@@ -1,12 +1,9 @@
 import React, { memo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-const STATS = [
-  { value: '10K+', label: 'Active Users' },
-  { value: '2M+', label: 'Tasks Completed' },
-  { value: '98%', label: 'Satisfaction' },
-  { value: '4.9', label: 'App Rating' },
-]
+
+
+
 
 const HOW_IT_WORKS = [
   { step: '01', title: 'Set Your Goals', desc: 'Define clear, measurable goals and let AI break them into manageable milestones.' },
@@ -112,33 +109,21 @@ const Home = memo(() => {
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex justify-center">
               <button
                 onClick={handleNavigateLogin}
                 className="group w-full sm:w-auto px-8 py-4 bg-linear-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-semibold text-lg shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-3"
               >
-                <span>Get Started Free</span>
+                <span>Get Started</span>
                 <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </button>
-              <button className="w-full sm:w-auto px-8 py-4 bg-white text-gray-700 rounded-2xl font-semibold text-lg border border-gray-200 hover:border-indigo-200 hover:text-indigo-600 hover:shadow-md transition-all duration-300 flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-                <span>Watch Demo</span>
-              </button>
             </div>
 
-            {/* Stats Bar */}
-            <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-2xl mx-auto">
-              {STATS.map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <p className="text-2xl sm:text-3xl font-extrabold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{stat.value}</p>
-                  <p className="text-xs sm:text-sm text-gray-400 mt-1 font-medium">{stat.label}</p>
-                </div>
-              ))}
-            </div>
+
+
+
 
             {/* Scroll indicator */}
             <div className="mt-12 animate-bounce">
